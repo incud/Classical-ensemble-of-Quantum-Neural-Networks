@@ -1,0 +1,14 @@
+name: pennylane
+channels:
+  - defaults
+dependencies:
+  - pip
+  - python=3.9
+  - pip:
+    - pennylane
+    - click
+    - sklearn
+    - jax[cpu]
+    - optax
+    - numpy
+    - pandas
