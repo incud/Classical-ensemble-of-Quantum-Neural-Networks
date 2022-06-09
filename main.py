@@ -30,7 +30,7 @@ def run_experiment(d, n, n_subsample, n_ensemble, n_layers, epochs, seed):
     print("Creating dataset")
     gm = GaussianMixtureClassificationDataset(n, d, 0, 1.0, 0)
     print("Split into training and testing set")
-    X_train, X_test, y_train, y_test = train_test_split(np.array(gm.X_noise), np.array(gm.y), test_size=0.5)
+    X_train, X_test, y_train, y_test = train_test_split(np.array(gm.X_noise), np.array(gm.y), test_size=0.90)
     np.save(f"{directory}/X_train.npy", X_train)
     np.save(f"{directory}/X_test.npy", X_test)
     np.save(f"{directory}/y_train.npy", y_train)
