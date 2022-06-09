@@ -1,3 +1,5 @@
+import json
+
 import click
 import sklearn.utils
 import numpy as np
@@ -23,6 +25,9 @@ def main():
 @click.option('--epochs', type=int, required=True)
 @click.option('--seed', type=int, required=True)
 def run_experiment(d, n, n_subsample, n_ensemble, n_layers, epochs, seed):
+    specs = {'d': d, 'n': n, 'n_subsample': n_subsample, 'n_ensemble': n_ensemble, 'n_layers': n_layers, 'epochs': epochs, 'seed': seed}
+
+
     np.random.seed(seed)
     directory = f"experiment_d{d}_nens{n_ensemble}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     path = Path(directory)
@@ -31,6 +36,8 @@ def run_experiment(d, n, n_subsample, n_ensemble, n_layers, epochs, seed):
     gm = GaussianMixtureClassificationDataset(n, d, 0, 1.0, 0)
     print("Split into training and testing set")
     X_train, X_test, y_train, y_test = train_test_split(np.array(gm.X_noise), np.array(gm.y), test_size=0.90)
+    with open(f"{directory}/specs.json", 'w') as outfile:
+        json.dump(specs, outfile)
     np.save(f"{directory}/X_train.npy", X_train)
     np.save(f"{directory}/X_test.npy", X_test)
     np.save(f"{directory}/y_train.npy", y_train)
