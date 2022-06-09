@@ -1,14 +1,12 @@
-########## Dataset ##########
-
-
 import numpy as np
 
-# Gaussian mixture dataset
+
 class GaussianMixtureClassificationDataset:
+    """Create the Gaussian XOR-like Mixture dataset for classification"""
     
     def __init__(self, n, d, padding, epsilon_d, epsilon_padding): 
         """
-        Generate dataset
+        Generate the dataset
         :param n: Number of element within the dataset
         :param d: Dimensionality of the feature vector representing the Gaussians
         :param padding: Dimensionality of the feature vector representing 
@@ -20,7 +18,7 @@ class GaussianMixtureClassificationDataset:
         self.X_noise = []
         self.y = []
         for i in range(n):
-            x_i = self.pick_random_hypercube_point(d, padding) 
+            x_i = self.pick_random_hypercube_point(d, padding)
             y_i = np.prod(x_i[:d])
             noise = self.generate_noise(d, epsilon_d, padding, epsilon_padding)
             self.X.append(x_i)
@@ -64,6 +62,3 @@ class GaussianMixtureClassificationDataset:
         gaussian_noise = np.random.normal(scale=epsilon_d, size=(d,)) 
         padding_noise = np.random.normal(scale=epsilon_padding, size=(padding,))
         return np.concatenate((gaussian_noise, padding_noise), axis=0)
-
-
-

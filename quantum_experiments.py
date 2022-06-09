@@ -7,8 +7,6 @@ import jax.numpy as jnp
 import optax
 import pennylane as qml
 rng = np.random.default_rng(12345)
-
-
 random.seed(10)
 np.random.seed(10)
 
