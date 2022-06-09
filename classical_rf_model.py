@@ -21,8 +21,7 @@ def E(weights, params):
     x = params[0]
     y_true = params[1]
     theta = params[2]
-    w = params[3]
-    y_pred = output(x, theta, w)
+    y_pred = output(x, theta, weights).reshape(-1,1)
     P = y_true.shape[0]
     return np.asscalar((1/(2*P))*np.dot((y_pred-y_true).T,(y_pred-y_true)))
     
@@ -43,7 +42,7 @@ class ClassicalRFModel:
         res = minimize(E, x0=self.w, args=params, 
                  method='BFGS',  options={'disp':True})
         self.w = res.x
-        print('Estimated training error: ', E(self.w,params))
+        print('\nEstimated training error: ', E(self.w,params))
         return self
     
     def predict(self, x):

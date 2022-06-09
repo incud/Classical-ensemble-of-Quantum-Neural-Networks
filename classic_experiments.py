@@ -15,16 +15,18 @@ n = n_train + n_test
 d = 2
 d_prime = 100
 padding = 0
-epsilon_d = 0
-epsilon_padding = 0
+epsilon_d = 1
+epsilon_padding = 1
 
 
 data = GaussianMixtureClassificationDataset(n, d, padding, epsilon_d, epsilon_padding)
-x = data.X_noise
-y = data.y
+x = np.array(data.X_noise)
+y = np.array(data.y)
+
 
 model = ClassicalRFModel(d_prime)
 model.fit(x,y)
+
 
 
 
