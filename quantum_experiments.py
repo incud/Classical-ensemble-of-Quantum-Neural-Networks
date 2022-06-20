@@ -1,4 +1,4 @@
-from dataset import GaussianMixtureClassificationDataset
+from dataset_gaussian import GaussianMixtureClassificationDataset
 from quantum_rf_model import QuantumRFModel
 import random
 import numpy as np

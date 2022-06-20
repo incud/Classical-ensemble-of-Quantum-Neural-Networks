@@ -3,9 +3,10 @@ import json
 import click
 import sklearn.utils
 import numpy as np
+import matplotlib.pyplot as plt
 from datetime import datetime
 from pathlib import Path
-from dataset import GaussianMixtureClassificationDataset
+from dataset_gaussian import GaussianMixtureClassificationDataset
 from sklearn.model_selection import train_test_split
 from quantum_experiment import QuantumExperiment
 
@@ -57,6 +58,32 @@ def run_experiment(d, n, n_subsample, n_ensemble, n_layers, epochs, seed):
     qe.evaluate_ensemble_avg(X_test, y_test)
     print("Saving to file")
     qe.save()
+
+
+@main.command()
+@click.option('--dir', type=click.Path(exists=True, dir_okay=True, file_okay=False), multiple=True, required=True)
+def run_experiment(dir):
+    points = {}
+    for directory in dir:
+        x = int(json.load(open(f"{directory}/specs.json"))['n_layers'])
+        y = np.load(f"{directory}/testing_losses.npy")[-1]
+        if x in points:
+            points[x].append(y)
+        else:
+            points[x] = [y]
+
+    print(points)
+    print()
+    
+    xl = list(points.keys())
+    xl.sort()
+    yl = [np.average(points[x]) for x in xl]
+    ye = [np.std(points[x]) for x in xl]
+    print(xl)
+    print(yl)
+    print(ye)
+    plt.errorbar(xl, yl, ye, marker='s')
+    plt.show()
 
 
 if __name__ == '__main__':
