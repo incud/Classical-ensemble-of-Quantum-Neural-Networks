@@ -31,17 +31,6 @@ class GaussianMixtureClassificationDataset:
         self.X = np.array(self.X)
         self.X_noise = np.array(self.X_noise)
         self.y = np.array(self.y)
-        
-    def save(self, directory): 
-        """
-        Save to relative path
-        :param directory: path of relative directory where the dataset has to 
-        be saved
-        :return: None
-        """
-        np.save(f"{directory}/X_wo_noise.npy", self.X) 
-        np.save(f"{directory}/X.npy", self.X_noise) 
-        np.save(f"{directory}/y.npy", self.y)
     
     @staticmethod
     def pick_random_hypercube_point(d, padding): 
@@ -52,7 +41,7 @@ class GaussianMixtureClassificationDataset:
         :param padding: zero padding at the end of the array 
         :return: d-dimensional vector representing the vertex
         """
-        point = (2*np.random.randint(0, 2, size=(d,)).astype("float")) -1
+        point = (2 * np.random.randint(0, 2, size=(d,)).astype("float")) -1
         padding = np.zeros(shape=(padding,))
         return np.concatenate((point, padding), axis=0)
     

@@ -10,7 +10,7 @@ from pennylane_varform import rx_embedding, ry_embedding, rz_embedding, hardware
 
 class PennyLaneModel(BaseEstimator):
 
-    def __init__(self, var_form, layers, seed):
+    def __init__(self, var_form, layers):
         assert var_form in ['hardware_efficient', 'tfim', 'ltfim', 'zz_rx']
         self.var_form = var_form
         self.layers = layers
@@ -18,7 +18,7 @@ class PennyLaneModel(BaseEstimator):
         self.initial_params = None
         self.params = None
         self.n_qubits = None
-        self.seed = seed
+        self.seed = 12345
 
     def get_var_form(self, n_qubits):
         if self.var_form == 'hardware_efficient':
@@ -75,6 +75,30 @@ class PennyLaneModel(BaseEstimator):
 @click.group()
 def main():
     pass
+
+
+@main.command()
+@click.option('--directory', type=click.Path(), required=True)
+@click.option('--d', type=int, required=True)
+@click.option('--epsilon', type=float, required=True)
+@click.option('--n-train', type=int, required=True)
+@click.option('--n-test', type=int, required=True)
+@click.option('--seed', type=int, required=True)
+def run(directory, d, epsilon, n_train, n_test, seed):
+    np.random.seed(seed)
+    gm_train = LinearRegressionDataset(n=n_train, d=d, epsilon=epsilon)
+    np.save(f"{directory}/train_X.npy", gm_train.X)
+    np.save(f"{directory}/train_y.npy", gm_train.y)
+    gm_test = LinearRegressionDataset(n=n_train, d=d, epsilon=epsilon)
+    np.save(f"{directory}/test_X.npy", gm_test.X)
+    np.save(f"{directory}/test_y.npy", gm_test.y)
+    json.dump({'d': d, 'epsilon': epsilon, 'n_train': n_train, 'n_test': n_test, 'seed': seed}, open(f"{directory}/specs.json", "w"))
+    plt.scatter(gm_train.X[:,0], gm_train.X[:,1], c=gm_train.y)
+    plt.savefig(f"{directory}/training_set.png")
+    plt.close('all')
+    plt.scatter(gm_test.X[:,0], gm_test.X[:,1], c=gm_test.y)
+    plt.savefig(f"{directory}/testing_set.png")
+    plt.close('all')
 
 
 if __name__ == '__main__':
