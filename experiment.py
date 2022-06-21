@@ -10,7 +10,10 @@ import jax.numpy as jnp
 import optax
 from pennylane_varform import rx_embedding, ry_embedding, rz_embedding, hardware_efficient_ansatz, tfim_ansatz, ltfim_ansatz, zz_rx_ansatz
 from sklearn.ensemble import BaggingRegressor
+from sklearn.ensemble import AdaBoostRegressor
 from pathlib import Path
+from datetime import datetime
+from sklearn.metrics import mean_squared_error
 
 
 class PennyLaneModel(BaseEstimator):
@@ -43,8 +46,8 @@ class PennyLaneModel(BaseEstimator):
         @qml.qnode(device, interface='jax')
         def circuit(x, theta):
             ry_embedding(x, wires=range(self.n_qubits))
-            for i in range(len(self.layers)):
-                var_form_fn(theta[i * params_per_layer, (i + 1) * params_per_layer], wires=range(self.n_qubits))
+            for i in range(self.layers):
+                var_form_fn(theta[i * params_per_layer : (i + 1) * params_per_layer], wires=range(self.n_qubits))
             return qml.expval(qml.PauliZ(wires=0))
 
         self.circuit = circuit
@@ -60,6 +63,7 @@ class PennyLaneModel(BaseEstimator):
         return cost / (2 * n)
 
     def fit(self, X, y):
+        print("Fitting ", end="")
         assert len(X.shape) == 2 and len(y.shape) == 1 and X.shape[0] == y.shape[0]
         self.n_qubits = X.shape[1]
         self.create_circuit()
@@ -71,10 +75,13 @@ class PennyLaneModel(BaseEstimator):
             cost, grad_circuit = jax.value_and_grad(lambda theta: self.calculate_mse_cost(X, y, theta))(self.params)
             updates, opt_state = optimizer.update(grad_circuit, opt_state)
             self.params = optax.apply_updates(self.params, updates)
+            print(".", end="")
+        print()
 
-    def transform(self, X):
-        assert len(X.shape) == 2 and X.shape[1] == self.n_qubits
-        return [self.circuit(xi, self.params) for xi in X]
+    def predict(self, X):
+        print("Predicting ...")
+        assert len(X.shape) == 2 and X.shape[1] == self.n_qubits, f"X shape is {X.shape}, n qubits {self.n_qubits}"
+        return np.array([self.circuit(xi, self.params) for xi in X])
 
 
 @click.group()
@@ -88,53 +95,106 @@ def main():
 @click.option('--varform', type=click.Choice(['hardware_efficient', 'tfim', 'ltfim', 'zz_rx']), required=True)
 @click.option('--layers', type=click.IntRange(1, 1000), required=False, default=1)
 @click.option('--n-estimators', type=click.IntRange(1, 100), required=False, default=20)
-@click.option('--seed', type=click.IntRange(1, 1000000), required=False, default=12345)
+@click.option('--seed', type=click.IntRange(1, 1000000), required=True)
 def run_jax(directory_experiment, directory_dataset, varform, layers, n_estimators, seed):
+
+    specs = {'datetime': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+             'directory_experiment': directory_experiment,
+             'directory_dataset': directory_dataset,
+             'varform': varform,
+             'layers': layers,
+             'n_estimators': n_estimators,
+             'seed': seed}
+    json.dump(specs, open(f"{directory_experiment}/specs.json", "w"))
 
     base_estimator = PennyLaneModel(var_form=varform, layers=layers)
 
     for subdir_ds in Path(directory_dataset).iterdir():
         if subdir_ds.is_dir():
+            print(f"Evaluating dataset {subdir_ds.name}")
 
-            # evaluate bagging properties
+            X_train = np.load(f"{subdir_ds}/train_X.npy")
+            y_train = np.load(f"{subdir_ds}/train_y.npy")
+            X_test = np.load(f"{subdir_ds}/test_X.npy")
+            y_test = np.load(f"{subdir_ds}/test_y.npy")
+
             scores = {}
-            for max_samples in [0.2, 0.5, 1.0]:
-                for max_features in [0.5, 1.0]:
-                    X_train = np.load(f"{subdir_ds}/train_X.npy")
-                    y_train = np.load(f"{subdir_ds}/train_y.npy")
-                    X_test = np.load(f"{subdir_ds}/test_X.npy")
-                    y_test = np.load(f"{subdir_ds}/test_y.npy")
+            scores['max_features'] = []
+            scores['max_samples'] = []
+            scores['mse_bagging'] = []
+            scores['mse_adaboost'] = {}
 
-                    regr = BaggingRegressor(base_estimator=base_estimator,
-                                            n_estimators=n_estimators,
-                                            max_features=max_features,
-                                            max_samples=max_samples,
-                                            random_state=seed)
-                    regr.fit(X_train, y_train)
-                    scores[(max_samples, max_features)] = {}
-                    scores[(max_samples, max_features)]['bagging'] = regr.score(X_test, y_test)
-                    for i, estimator in enumerate(regr.estimators_):
-                        scores[(max_samples, max_features)]['estimators'] = []
-                        scores[(max_samples, max_features)]['estimators'][i] = regr.score(X_test, y_test)
+            # evaluate bagging
+            for max_samples in [0.2, 0.5]:
+                for max_features in [0.5]:
+                    bag_regr = BaggingRegressor(base_estimator=base_estimator,
+                                                n_estimators=n_estimators,
+                                                max_features=max_features,
+                                                max_samples=max_samples,
+                                                random_state=seed)
+                    bag_regr.fit(X_train, y_train)
+
+                    scores['max_samples'].append(max_samples)
+                    scores['max_features'].append(max_features)
+                    scores['mse_bagging'].append({
+                        'bagging': mean_squared_error(y_test, bag_regr.predict(X_test)),
+                        'bagging_estimators': []
+                    })
+
+                    for estimator, feature_list in zip(bag_regr.estimators_, bag_regr.estimators_features_):
+                        mse_bag_estimator = mean_squared_error(y_test, estimator.predict(X_test[:, feature_list]))
+                        scores['mse_bagging'][-1]['bagging_estimators'].append(mse_bag_estimator)
+
+            # evaluate boosting
+            ada_regr = AdaBoostRegressor(base_estimator=base_estimator,
+                                         n_estimators=n_estimators,
+                                         random_state=seed,
+                                         loss='square')
+            ada_regr.fit(X_train, y_train)
+
+            scores['mse_adaboost']['adaboost'] = mean_squared_error(y_test, ada_regr.predict(X_test))
+            scores['mse_adaboost']['adaboost_estimators'] = []
+
+            for estimator in ada_regr.estimators_:
+                mse_ada_estimator = mean_squared_error(y_test, estimator.predict(X_test))
+                scores['mse_adaboost']['adaboost_estimators'].append(mse_ada_estimator)
 
             # save bagging properties to file
             name = subdir_ds.name
-            json.dump(scores, open(f"experiments_jax/{directory_experiment}/{name}.json"))
+            print(scores)
+            json.dump(scores, open(f"{directory_experiment}/{name}.json", "w"))
+
+            # label to plots
+            x_ticks = []
 
             # create plot of the current bagging results
-            x_ticks = []
-            for i, (max_samples, max_features) in enumerate(scores.keys()):
+            N = len(scores['max_features'])
+            for i in range(N):
+                max_samples = scores['max_samples'][i]
+                max_features = scores['max_features'][i]
+                mse = scores['mse_bagging'][i]
+                print(max_samples, max_features, mse)
                 plt.scatter(i,
-                            scores[(max_samples, max_features)]['bagging'],
+                            mse['bagging'],
                             color='red')
                 plt.scatter([i] * n_estimators,
-                            [scores[(max_samples, max_features)]['estimators'][j] for j in range(n_estimators)],
-                            color='blue')
-                x_ticks.append(f"s={max_samples}, f={max_features}")
+                            [mse['bagging_estimators'][j] for j in range(n_estimators)],
+                            color='orange')
+                x_ticks.append(f"bag s={max_samples}, f={max_features}")
+
+            # create plot of the current boosting results
+            mse = scores['mse_adaboost']
+            plt.scatter([N] * n_estimators,
+                        [mse['adaboost_estimators'][j] for j in range(n_estimators)],
+                        color='blue')
+            plt.scatter(N,
+                        mse['adaboost'],
+                        color='green')
+            x_ticks.append("adaboost")
 
             plt.title(f'Testing accuracy of dataset {name}')
-            plt.xticks(range(len(scores.keys())), x_ticks)
-            plt.savefig(f"experiments_jax/{directory_experiment}/{name}.png")
+            plt.xticks(ticks=range(len(x_ticks)), labels=x_ticks)
+            plt.savefig(f"{directory_experiment}/{name}.png")
             plt.close('all')
 
 

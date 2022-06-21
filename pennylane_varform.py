@@ -44,7 +44,7 @@ def ltfim_ansatz(theta, wires):
     """
     N = len(wires)
     assert len(theta) == 3
-    tfim_ansatz(theta, wires)
+    tfim_ansatz(theta[:2], wires)
     for i in range(N):
         qml.RZ(theta[2], wires=wires[i])
 
