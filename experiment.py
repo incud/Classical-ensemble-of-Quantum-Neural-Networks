@@ -125,26 +125,26 @@ def run_jax(directory_experiment, directory_dataset, varform, layers, n_estimato
             scores['mse_adaboost'] = {}
 
             # evaluate bagging
-            for max_samples in [0.2, 0.5]:
-                for max_features in [0.5]:
-                    bag_regr = BaggingRegressor(base_estimator=base_estimator,
-                                                n_estimators=n_estimators,
-                                                max_features=max_features,
-                                                max_samples=max_samples,
-                                                random_state=seed)
-                    bag_regr.fit(X_train, y_train)
-
-                    scores['max_samples'].append(max_samples)
-                    scores['max_features'].append(max_features)
-                    scores['mse_bagging'].append({
-                        'bagging': mean_squared_error(y_test, bag_regr.predict(X_test)),
-                        'bagging_estimators': []
-                    })
-
-                    for estimator, feature_list in zip(bag_regr.estimators_, bag_regr.estimators_features_):
-                        mse_bag_estimator = mean_squared_error(y_test, estimator.predict(X_test[:, feature_list]))
-                        scores['mse_bagging'][-1]['bagging_estimators'].append(mse_bag_estimator)
-
+            #for max_samples in [0.2, 0.5, 1.0]:
+            #    for max_features in [0.5, 1.0]:
+            #        bag_regr = BaggingRegressor(base_estimator=base_estimator,
+            #                                    n_estimators=n_estimators,
+            #                                    max_features=max_features,
+            #                                    max_samples=max_samples,
+            #                                    random_state=seed)
+            #        bag_regr.fit(X_train, y_train)
+#
+            #        scores['max_samples'].append(max_samples)
+            #        scores['max_features'].append(max_features)
+            #        scores['mse_bagging'].append({
+            #            'bagging': mean_squared_error(y_test, bag_regr.predict(X_test)),
+            #            'bagging_estimators': []
+            #        })
+#
+            #        for estimator, feature_list in zip(bag_regr.estimators_, bag_regr.estimators_features_):
+            #            mse_bag_estimator = mean_squared_error(y_test, estimator.predict(X_test[:, feature_list]))
+            #            scores['mse_bagging'][-1]['bagging_estimators'].append(mse_bag_estimator)
+#
             # evaluate boosting
             ada_regr = AdaBoostRegressor(base_estimator=base_estimator,
                                          n_estimators=n_estimators,
@@ -177,15 +177,15 @@ def run_jax(directory_experiment, directory_dataset, varform, layers, n_estimato
                 plt.scatter(i,
                             mse['bagging'],
                             color='red')
-                plt.scatter([i] * n_estimators,
-                            [mse['bagging_estimators'][j] for j in range(n_estimators)],
+                plt.scatter([i] * len(mse['bagging_estimators']),
+                            mse['bagging_estimators'],
                             color='orange')
                 x_ticks.append(f"bag s={max_samples}, f={max_features}")
 
             # create plot of the current boosting results
             mse = scores['mse_adaboost']
-            plt.scatter([N] * n_estimators,
-                        [mse['adaboost_estimators'][j] for j in range(n_estimators)],
+            plt.scatter([N] * len(mse['adaboost_estimators']),
+                        mse['adaboost_estimators'],
                         color='blue')
             plt.scatter(N,
                         mse['adaboost'],
