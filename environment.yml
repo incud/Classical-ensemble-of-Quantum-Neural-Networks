@@ -12,3 +12,4 @@ dependencies:
     - optax
     - numpy
     - pandas
+    - matplotlib
