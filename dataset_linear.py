@@ -38,6 +38,7 @@ def generate_dataset_process(directory, d, epsilon, n_train, n_test, seed):
     plt.savefig(f"{directory}/testing_set.png")
     plt.close('all')
 
+
 @click.group()
 def main():
     pass

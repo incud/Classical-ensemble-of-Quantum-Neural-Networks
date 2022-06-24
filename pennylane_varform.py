@@ -27,6 +27,7 @@ def hardware_efficient_ansatz(theta, wires):
 def tfim_ansatz(theta, wires):
     """
     Figure 6a (left) in https://arxiv.org/pdf/2105.14377.pdf
+    Figure 7a in https://arxiv.org/pdf/2109.11676.pdf
     """
     N = len(wires)
     assert len(theta) == 2
@@ -47,17 +48,3 @@ def ltfim_ansatz(theta, wires):
     tfim_ansatz(theta[:2], wires)
     for i in range(N):
         qml.RZ(theta[2], wires=wires[i])
-
-
-def zz_rx_ansatz(theta, wires):
-    """
-    Figure 7a in https://arxiv.org/pdf/2109.11676.pdf
-    """
-    N = len(wires)
-    assert len(theta) == 2
-    for i in range(N // 2):
-        qml.MultiRZ(theta[0], wires=[wires[2 * i], wires[2 * i + 1]])
-    for i in range(N // 2 - 1):
-        qml.MultiRZ(theta[0], wires=[wires[2 * i + 1], wires[2 * i + 2]])
-    for i in range(N):
-        qml.RX(theta[1], wires=wires[i])

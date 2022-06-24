@@ -1,0 +1,1 @@
+{"datetime": "2022-06-22 10:23:24", "directory_experiment": "experiments_jax/exp_hweff_l1", "directory_dataset": "datasets_linear", "varform": "hardware_efficient", "layers": 1, "n_estimators": 20, "seed": 41234}
