@@ -82,7 +82,7 @@ class PennyLaneModel(BaseEstimator):
         assert len(X.shape) == 2 and X.shape[1] == self.n_qubits, f"X shape is {X.shape}, n qubits {self.n_qubits}"
         return np.array([self.circuit(xi, self.params) for xi in X])
 
-    def get_params(self, deep=True):
+    def get_thetas(self):
 
         def jnp_to_np(value):
             try:
@@ -279,9 +279,9 @@ def run_jax_bag(directory_experiment, directory_dataset, varform, layers, n_esti
             })
             for estimator, feature_list in zip(bag_regr.estimators_, bag_regr.estimators_features_):
                 mse_bag_estimator = mean_squared_error(y_test, estimator.predict(X_test[:, feature_list]))
-                params_bag_estimator = estimator.get_params()
-                scores['mse_bagging'][-1]['bagging_estimators_mse'].append(mse_bag_estimator)
-                scores['mse_bagging'][-1]['bagging_estimators_params'].append(params_bag_estimator)
+                params_bag_estimator = estimator.get_thetas()
+                scores[-1]['bagging_estimators_mse'].append(mse_bag_estimator)
+                scores[-1]['bagging_estimators_params'].append(params_bag_estimator.tolist())
 
             # save bagging properties to file
             name = subdir_ds.name
