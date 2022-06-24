@@ -8,7 +8,8 @@ from sklearn.base import BaseEstimator
 import jax
 import jax.numpy as jnp
 import optax
-from pennylane_varform import rx_embedding, ry_embedding, rz_embedding, hardware_efficient_ansatz, tfim_ansatz, ltfim_ansatz, zz_rx_ansatz
+from pennylane_varform import rx_embedding, ry_embedding, rz_embedding, hardware_efficient_ansatz, tfim_ansatz, \
+    ltfim_ansatz
 from sklearn.ensemble import BaggingRegressor
 from sklearn.ensemble import AdaBoostRegressor
 from pathlib import Path
@@ -19,7 +20,7 @@ from sklearn.metrics import mean_squared_error
 class PennyLaneModel(BaseEstimator):
 
     def __init__(self, var_form, layers):
-        assert var_form in ['hardware_efficient', 'tfim', 'ltfim', 'zz_rx']
+        assert var_form in ['hardware_efficient', 'tfim', 'ltfim']
         self.var_form = var_form
         self.layers = layers
         self.circuit = None
@@ -35,8 +36,6 @@ class PennyLaneModel(BaseEstimator):
             return tfim_ansatz, 2
         elif self.var_form == 'ltfim':
             return ltfim_ansatz, 3
-        elif self.var_form == 'zz_rx':
-            return zz_rx_ansatz, 2
 
     def create_circuit(self):
         device = qml.device("default.qubit.jax", wires=self.n_qubits)
@@ -47,7 +46,7 @@ class PennyLaneModel(BaseEstimator):
         def circuit(x, theta):
             ry_embedding(x, wires=range(self.n_qubits))
             for i in range(self.layers):
-                var_form_fn(theta[i * params_per_layer : (i + 1) * params_per_layer], wires=range(self.n_qubits))
+                var_form_fn(theta[i * params_per_layer: (i + 1) * params_per_layer], wires=range(self.n_qubits))
             return qml.expval(qml.PauliZ(wires=0))
 
         self.circuit = circuit
@@ -83,21 +82,84 @@ class PennyLaneModel(BaseEstimator):
         assert len(X.shape) == 2 and X.shape[1] == self.n_qubits, f"X shape is {X.shape}, n qubits {self.n_qubits}"
         return np.array([self.circuit(xi, self.params) for xi in X])
 
+    def get_params(self, deep=True):
+
+        def jnp_to_np(value):
+            try:
+                value_numpy = np.array(value)
+                return value_numpy
+            except:
+                try:
+                    value_numpy = np.array(value.primal)
+                    return value_numpy
+                except:
+                    try:
+                        value_numpy = np.array(value.primal.aval)
+                        return value_numpy
+                    except:
+                        raise ValueError(f"Cannot convert to numpy value {value}")
+
+        return jnp_to_np(self.params)
+
 
 @click.group()
 def main():
     pass
 
 
+def save_full_plot_to_file(directory_experiment, name, scores):
+    # label to plots
+    x_ticks = []
+
+    # create plot of the current bagging results
+    N = len(scores['max_features'])
+    for i in range(N):
+        max_samples = scores['max_samples'][i]
+        max_features = scores['max_features'][i]
+        mse = scores['mse_bagging'][i]
+        # print(max_samples, max_features, mse)
+        plt.scatter([i] * len(mse['bagging_estimators']),
+                    mse['bagging_estimators'],
+                    color='orange', s=40)
+        plt.scatter(i,
+                    mse['bagging'],
+                    color='red', s=45)
+        x_ticks.append(f"bag s={max_samples}, f={max_features}")
+
+    # create plot of the current boosting results
+    mse = scores['mse_adaboost']
+    plt.scatter([N] * len(mse['adaboost_estimators']),
+                mse['adaboost_estimators'],
+                color='blue', s=40)
+    plt.scatter(N,
+                mse['adaboost'],
+                color='yellow', s=45)
+    x_ticks.append("adaboost")
+
+    plt.title(f'Testing accuracy of dataset {name}')
+    plt.ylim((0, 0.5))
+    plt.xticks(ticks=range(len(x_ticks)), labels=x_ticks, rotation=-45)
+    plt.tight_layout()
+    plt.savefig(f"{directory_experiment}/{name}.png")
+    plt.close('all')
+
+
+@main.command()
+@click.option('--directory-experiment', type=click.Path(exists=True, dir_okay=True, file_okay=False), required=True)
+@click.option('--name', type=str, required=True)
+def regenerate_plot(directory_experiment, name):
+    score = json.load(open(f"{directory_experiment}/{name}.json"))
+    save_full_plot_to_file(directory_experiment, name, score)
+
+
 @main.command()
 @click.option('--directory-experiment', type=click.Path(exists=True, dir_okay=True, file_okay=False), required=True)
 @click.option('--directory-dataset', type=click.Path(exists=True, dir_okay=True, file_okay=False), required=True)
-@click.option('--varform', type=click.Choice(['hardware_efficient', 'tfim', 'ltfim', 'zz_rx']), required=True)
+@click.option('--varform', type=click.Choice(['hardware_efficient', 'tfim', 'ltfim']), required=True)
 @click.option('--layers', type=click.IntRange(1, 1000), required=False, default=1)
 @click.option('--n-estimators', type=click.IntRange(1, 100), required=False, default=20)
 @click.option('--seed', type=click.IntRange(1, 1000000), required=True)
 def run_jax(directory_experiment, directory_dataset, varform, layers, n_estimators, seed):
-
     specs = {'datetime': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
              'directory_experiment': directory_experiment,
              'directory_dataset': directory_dataset,
@@ -162,40 +224,70 @@ def run_jax(directory_experiment, directory_dataset, varform, layers, n_estimato
             print(scores)
             json.dump(scores, open(f"{directory_experiment}/{name}.json", "w"))
 
-            # label to plots
-            x_ticks = []
+            save_full_plot_to_file(directory_experiment, name, scores)
 
-            # create plot of the current bagging results
-            N = len(scores['max_features'])
-            for i in range(N):
-                max_samples = scores['max_samples'][i]
-                max_features = scores['max_features'][i]
-                mse = scores['mse_bagging'][i]
-                print(max_samples, max_features, mse)
-                plt.scatter(i,
-                            mse['bagging'],
-                            color='red')
-                plt.scatter([i] * len(mse['bagging_estimators']),
-                            mse['bagging_estimators'],
-                            color='orange')
-                x_ticks.append(f"bag s={max_samples}, f={max_features}")
 
-            # create plot of the current boosting results
-            mse = scores['mse_adaboost']
-            plt.scatter([N] * len(mse['adaboost_estimators']),
-                        mse['adaboost_estimators'],
-                        color='blue')
-            plt.scatter(N,
-                        mse['adaboost'],
-                        color='green')
-            x_ticks.append("adaboost")
+@main.command()
+@click.option('--directory-experiment', type=click.Path(exists=True, dir_okay=True, file_okay=False), required=True)
+@click.option('--directory-dataset', type=click.Path(exists=True, dir_okay=True, file_okay=False), required=True)
+@click.option('--varform', type=click.Choice(['hardware_efficient', 'tfim', 'ltfim']), required=True)
+@click.option('--layers', type=click.IntRange(1, 1000), required=False, default=1)
+@click.option('--n-estimators', type=click.IntRange(1, 100), required=False, default=20)
+@click.option('--seed', type=click.IntRange(1, 1000000), required=True)
+def run_jax_bag(directory_experiment, directory_dataset, varform, layers, n_estimators, seed):
+    specs = {'datetime': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+             'directory_experiment': directory_experiment,
+             'directory_dataset': directory_dataset,
+             'varform': varform,
+             'layers': layers,
+             'n_estimators': n_estimators,
+             'seed': seed}
+    json.dump(specs, open(f"{directory_experiment}/specs.json", "w"))
 
-            plt.title(f'Testing accuracy of dataset {name}')
-            plt.xticks(ticks=range(len(x_ticks)), labels=x_ticks)
-            plt.savefig(f"{directory_experiment}/{name}.png")
-            plt.close('all')
+    base_estimator = PennyLaneModel(var_form=varform, layers=layers)
+
+    for subdir_ds in Path(directory_dataset).iterdir():
+        if subdir_ds.is_dir():
+            print(f"Evaluating dataset {subdir_ds.name}")
+
+            X_train = np.load(f"{subdir_ds}/train_X.npy")
+            y_train = np.load(f"{subdir_ds}/train_y.npy")
+            X_test = np.load(f"{subdir_ds}/test_X.npy")
+            y_test = np.load(f"{subdir_ds}/test_y.npy")
+
+            # evaluate bagging
+            max_samples = 0.2
+            max_features = 0.5
+
+            # create compact score
+            scores = []
+
+            bag_regr = BaggingRegressor(base_estimator=base_estimator,
+                                        n_estimators=n_estimators,
+                                        max_features=max_features,
+                                        max_samples=max_samples,
+                                        random_state=seed)
+            bag_regr.fit(X_train, y_train)
+            scores.append({
+                'max_features': max_features,
+                'max_samples': max_samples,
+                'varform': varform,
+                'layers': layers,
+                'bagging_mse': mean_squared_error(y_test, bag_regr.predict(X_test)),
+                'bagging_estimators_mse': [],
+                'bagging_estimators_params': []
+            })
+            for estimator, feature_list in zip(bag_regr.estimators_, bag_regr.estimators_features_):
+                mse_bag_estimator = mean_squared_error(y_test, estimator.predict(X_test[:, feature_list]))
+                params_bag_estimator = estimator.get_params()
+                scores['mse_bagging'][-1]['bagging_estimators_mse'].append(mse_bag_estimator)
+                scores['mse_bagging'][-1]['bagging_estimators_params'].append(params_bag_estimator)
+
+            # save bagging properties to file
+            name = subdir_ds.name
+            print(scores)
+            json.dump(scores, open(f"{directory_experiment}/{name}.json", "w"))
 
 
 if __name__ == '__main__':
     main()
-
