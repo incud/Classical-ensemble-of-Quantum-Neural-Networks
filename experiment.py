@@ -19,7 +19,7 @@ from sklearn.metrics import mean_squared_error
 
 class PennyLaneModel(BaseEstimator):
 
-    def __init__(self, var_form, layers):
+    def __init__(self, var_form, layers, backend):
         assert var_form in ['hardware_efficient', 'tfim', 'ltfim']
         self.var_form = var_form
         self.layers = layers
@@ -27,6 +27,8 @@ class PennyLaneModel(BaseEstimator):
         self.initial_params = None
         self.params = None
         self.n_qubits = None
+        assert backend in ['jax', 'ibmq']
+        self.backend = backend
         self.seed = 12345
 
     def get_var_form(self, n_qubits):
@@ -38,7 +40,12 @@ class PennyLaneModel(BaseEstimator):
             return ltfim_ansatz, 3
 
     def create_circuit(self):
-        device = qml.device("default.qubit.jax", wires=self.n_qubits)
+        if self.backend == 'jax':
+            device = qml.device("default.qubit.jax", wires=self.n_qubits)
+        elif self.backend == 'ibmq':
+            device = qml.device('qiskit.ibmq', wires=self.n_qubits, backend='ibmq_qasm_simulator', ibmqx_token="XXX")
+        else:
+            raise ValueError(f"Backend {self.backend} is unknown")
         var_form_fn, params_per_layer = self.get_var_form(self.n_qubits)
 
         @jax.jit
@@ -169,7 +176,7 @@ def run_jax(directory_experiment, directory_dataset, varform, layers, n_estimato
              'seed': seed}
     json.dump(specs, open(f"{directory_experiment}/specs.json", "w"))
 
-    base_estimator = PennyLaneModel(var_form=varform, layers=layers)
+    base_estimator = PennyLaneModel(var_form=varform, layers=layers, backend='jax')
 
     for subdir_ds in Path(directory_dataset).iterdir():
         if subdir_ds.is_dir():
@@ -234,7 +241,8 @@ def run_jax(directory_experiment, directory_dataset, varform, layers, n_estimato
 @click.option('--layers', type=click.IntRange(1, 1000), required=False, default=1)
 @click.option('--n-estimators', type=click.IntRange(1, 100), required=False, default=20)
 @click.option('--seed', type=click.IntRange(1, 1000000), required=True)
-def run_jax_bag(directory_experiment, directory_dataset, varform, layers, n_estimators, seed):
+@click.option('--backend', type=click.Choice(['jax', 'ibmq']), required=False, default='jax')
+def run_jax_bag(directory_experiment, directory_dataset, varform, layers, n_estimators, seed, backend):
     specs = {'datetime': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
              'directory_experiment': directory_experiment,
              'directory_dataset': directory_dataset,
@@ -244,7 +252,7 @@ def run_jax_bag(directory_experiment, directory_dataset, varform, layers, n_esti
              'seed': seed}
     json.dump(specs, open(f"{directory_experiment}/specs.json", "w"))
 
-    base_estimator = PennyLaneModel(var_form=varform, layers=layers)
+    base_estimator = PennyLaneModel(var_form=varform, layers=layers, backend=backend)
 
     for subdir_ds in Path(directory_dataset).iterdir():
         if subdir_ds.is_dir():
