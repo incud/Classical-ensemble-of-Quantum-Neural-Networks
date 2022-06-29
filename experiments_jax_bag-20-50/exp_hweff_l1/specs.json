@@ -1,1 +1,1 @@
-{"datetime": "2022-06-24 11:26:59", "directory_experiment": "experiments_jax_bag-20-50/exp_hweff_l1", "directory_dataset": "datasets_linear_bag-20-50", "varform": "hardware_efficient", "layers": 1, "n_estimators": 20, "seed": 98378}
+{"datetime": "2022-06-29 17:09:24", "directory_experiment": "experiments_jax_bag-20-50/exp_hweff_l1", "directory_dataset": "datasets_linear_bag_ibm", "varform": "hardware_efficient", "layers": 1, "n_estimators": 20, "seed": 98378}
