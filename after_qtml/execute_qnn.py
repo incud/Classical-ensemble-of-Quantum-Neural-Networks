@@ -38,10 +38,10 @@ def experiment(dataset, mode, ibm_device, ibm_token, varform, layers, seed):
     y = np.load(dataset / "y.npy")
     if (working_dir / "y_test.npy").exists():
         print(f"The directory {working_dir} already exists and the dataset are already generated")
-        X_train = np.save(working_dir / "X_train.npy")
-        X_test = np.save(working_dir / "X_test.npy")
-        y_train = np.save(working_dir / "y_train.npy")
-        y_test = np.save(working_dir / "y_test.npy")
+        X_train = np.load(working_dir / "X_train.npy")
+        X_test = np.load(working_dir / "X_test.npy")
+        y_train = np.load(working_dir / "y_train.npy")
+        y_test = np.load(working_dir / "y_test.npy")
     else:
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.80, random_state=seed * 2)
         np.save(working_dir / "X_train.npy", X_train)
