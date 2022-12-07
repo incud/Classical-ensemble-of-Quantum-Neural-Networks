@@ -1,7 +1,6 @@
 import os
 import numpy as np
 import click
-import matplotlib.pyplot as plt
 
 
 @click.group()
@@ -19,7 +18,7 @@ def linear(n, d, e, seed, noise):
     linear_c(n, d, e, seed, noise)
 
 
-def linear_c(n, d, e, seed, noise, directory='.', plot=False):
+def linear_c(n, d, e, seed, noise, directory='.'):
     np.random.seed(seed)
     w = np.random.uniform(low=-1.0, high=1.0, size=(d, ))
     assert len(w.ravel()) == d, f"Vector w must have dimensionality d={d}"
@@ -34,9 +33,6 @@ def linear_c(n, d, e, seed, noise, directory='.', plot=False):
     assert epsilon.shape == (n,)
     y = y_no_noise + epsilon
     os.makedirs(directory, exist_ok=True)
-    if plot:
-        plt.plot(X,y,'o')
-        plt.show()
     np.save(f"{directory}/X.npy", X)
     np.save(f"{directory}/w.npy", w)
     np.save(f"{directory}/y_no_noise.npy", y_no_noise)
