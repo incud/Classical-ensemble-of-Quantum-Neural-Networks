@@ -13,24 +13,39 @@ IBM_QISKIT_PROJECT = 'MYPROJECT'
 def rx_embedding(x, wires):
     qml.AngleEmbedding(x, wires=wires, rotation='X')
 
-
 def ry_embedding(x, wires):
     qml.AngleEmbedding(x, wires=wires, rotation='Y')
-
 
 def rz_embedding(x, wires):
     qml.Hadamard(wires=wires)
     qml.AngleEmbedding(x, wires=wires, rotation='Z')
+    
+def embedding_sin(x, wires):
+    for i in wires:
+        qml.RY(jnp.arcsin(x), wires=i)
+    for i in wires:
+        qml.RZ(jnp.arccos(x**2), wires=i)
+    
+def embedding(x, wires):
+    for i in range(len(wires)):
+        qml.RY(jnp.tanh(x[i]), wires=i)
+    for i in wires:
+        qml.RZ(jnp.tanh(x[i]**2), wires=i)
 
 
 def hardware_efficient_ansatz(theta, wires):
     N = len(wires)
-    assert len(theta) == 2 * N
+    assert len(theta) == 3 * N
     for i in range(N):
-        qml.RX(theta[2 * i], wires=wires[i])
-        qml.RY(theta[2 * i + 1], wires=wires[i])
+        qml.RX(theta[3 * i], wires=wires[i])
     for i in range(N-1):
-        qml.CZ(wires=[wires[i], wires[i + 1]])
+        qml.CNOT(wires=[wires[i], wires[i + 1]])
+    for i in range(N):
+        qml.RZ(theta[3 * i + 1], wires=wires[i])
+    for i in range(N-1):
+        qml.CNOT(wires=[wires[i], wires[i + 1]])
+    for i in range(N):
+        qml.RX(theta[3 * i + 2], wires=wires[i])
 
 
 def tfim_ansatz(theta, wires):
@@ -61,7 +76,7 @@ def ltfim_ansatz(theta, wires):
 
 class Qnn(BaseEstimator):
 
-    def __init__(self, var_form, layers, backend, ibm_device=None, ibm_token=None):
+    def __init__(self, var_form, layers, backend, seed, ibm_device=None, ibm_token=None):
         assert var_form in ['hardware_efficient', 'tfim', 'ltfim']
         assert backend in ['jax', 'ibmq']
         self.var_form = var_form
@@ -73,11 +88,12 @@ class Qnn(BaseEstimator):
         self.backend = backend
         self.ibm_device = ibm_device
         self.ibm_token = ibm_token
-        self.seed = 12345
+        self.seed = seed
+        self.random_state = self.seed
 
     def get_var_form(self, n_qubits):
         if self.var_form == 'hardware_efficient':
-            return hardware_efficient_ansatz, 2 * n_qubits
+            return hardware_efficient_ansatz, 3 * n_qubits
         elif self.var_form == 'tfim':
             return tfim_ansatz, 2
         elif self.var_form == 'ltfim':
@@ -97,13 +113,13 @@ class Qnn(BaseEstimator):
         @jax.jit
         @qml.qnode(device, interface='jax')
         def circuit(x, theta):
-            ry_embedding(x, wires=range(self.n_qubits))
             for i in range(self.layers):
+                embedding(x, wires=range(self.n_qubits))
                 var_form_fn(theta[i * params_per_layer: (i + 1) * params_per_layer], wires=range(self.n_qubits))
             return qml.expval(qml.PauliZ(wires=0))
 
         self.circuit = circuit
-        self.initial_params = jax.random.normal(jax.random.PRNGKey(self.seed), shape=(self.layers * params_per_layer,))
+        self.initial_params = jax.random.normal(jax.random.PRNGKey(self.random_state), shape=(self.layers * params_per_layer,))
 
     def calculate_mse_cost(self, X, y, theta):
         n = X.shape[0]
@@ -113,26 +129,53 @@ class Qnn(BaseEstimator):
             yp = self.circuit(x_i, theta)
             cost += (yp - y_i) ** 2
         return cost / (2 * n)
+        
+    def calculate_rmse_cost(self, X, y, theta):
+        n = X.shape[0]
+        cost = 0
+        for i in range(n):
+            x_i, y_i = X[i], y[i]
+            yp = self.circuit(x_i, theta)
+            cost += (yp - y_i) ** 2
+        return jnp.sqrt(cost / (2 * n))
+
 
     def fit(self, X, y):
         print("Fitting ", end="")
         assert len(X.shape) == 2 and len(y.shape) == 1 and X.shape[0] == y.shape[0]
-        self.n_qubits = X.shape[1]
+        self.n_qubits = X.shape[1]*5
         self.create_circuit()
         self.params = jnp.copy(self.initial_params)
+        #print('init params',self.initial_params)
         optimizer = optax.adam(learning_rate=0.1)
         opt_state = optimizer.init(self.initial_params)
         epochs = 150
         for epoch in range(epochs):
             cost, grad_circuit = jax.value_and_grad(lambda theta: self.calculate_mse_cost(X, y, theta))(self.params)
             updates, opt_state = optimizer.update(grad_circuit, opt_state)
+            #print(self.params)
             self.params = optax.apply_updates(self.params, updates)
+            #print('params',self.params)
+            print('cost',cost)
             print(".", end="")
         print()
 
     def predict(self, X):
         print("Predicting ...")
+        assert len(X.shape) == 2 and X.shape[1] == self.n_qubits//5, f"X shape is {X.shape}, n qubits {self.n_qubits}"
+        #print(self.params)
+        #for i in range(len(X)):
+            # print()
+            # print('x_i',X[i])
+            # print('y_pred',self.circuit(X[i], self.params))
+            # print('y_true',np.sin(X[i]),np.sin(np.pi*X[i]),y[i])
+            # print()
+        return np.array([self.circuit(xi, self.params) for xi in X])
+        
+    def predict2(self, X, y):
+        print("Predicting ...")
         assert len(X.shape) == 2 and X.shape[1] == self.n_qubits, f"X shape is {X.shape}, n qubits {self.n_qubits}"
+        print('rmse_cost_test',self.calculate_rmse_cost(X, y, self.params))
         return np.array([self.circuit(xi, self.params) for xi in X])
 
     def get_thetas(self):

@@ -1,0 +1,1 @@
+python execute_qnn.py experiment --dataset datasets/linear/n250_d02_e01_seed1000 --mode jax --varform hardware_efficient --layers 1 --seed 9000
