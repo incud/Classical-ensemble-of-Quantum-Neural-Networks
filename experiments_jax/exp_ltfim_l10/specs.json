@@ -1,1 +1,0 @@
-{"datetime": "2022-06-23 13:06:33", "directory_experiment": "experiments_jax/exp_ltfim_l10", "directory_dataset": "datasets_linear", "varform": "tfim", "layers": 10, "n_estimators": 20, "seed": 1236}
