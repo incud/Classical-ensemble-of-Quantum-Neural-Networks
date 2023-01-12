@@ -12,9 +12,9 @@ from embedding import embedding, ry_embedding, rx_embedding
 from ansatz import get_ansatz
 
 
-IBM_QISKIT_HUB = 'MYHUB'
-IBM_QISKIT_GROUP = 'MYGROUP'
-IBM_QISKIT_PROJECT = 'MYPROJECT'
+IBM_QISKIT_HUB = 'ibm-q'
+IBM_QISKIT_GROUP = 'open'
+IBM_QISKIT_PROJECT = 'main'
 
 
 def create_circuit(n_qubits,backend,layers,ansatz,ibm_device=None, ibm_token=None):
@@ -22,7 +22,7 @@ def create_circuit(n_qubits,backend,layers,ansatz,ibm_device=None, ibm_token=Non
         device = qml.device("default.qubit.jax", wires=n_qubits)
     elif backend == 'ibm':
         device = qml.device('qiskit.ibmq', wires=n_qubits, backend=ibm_device,
-                            ibmqx_token=ibm_token, hub=IBM_QISKIT_HUB,
+                            ibmqx_token=ibm_token,hub=IBM_QISKIT_HUB,
                             group=IBM_QISKIT_GROUP, project=IBM_QISKIT_PROJECT)
     else:
         raise ValueError(f"Backend {backend} is unknown")
