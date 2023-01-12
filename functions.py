@@ -20,7 +20,7 @@ IBM_QISKIT_PROJECT = 'MYPROJECT'
 def create_circuit(n_qubits,backend,layers,ansatz,ibm_device=None, ibm_token=None):
     if backend == 'jax':
         device = qml.device("default.qubit.jax", wires=n_qubits)
-    elif backend == 'ibmq':
+    elif backend == 'ibm':
         device = qml.device('qiskit.ibmq', wires=n_qubits, backend=ibm_device,
                             ibmqx_token=ibm_token, hub=IBM_QISKIT_HUB,
                             group=IBM_QISKIT_GROUP, project=IBM_QISKIT_PROJECT)
