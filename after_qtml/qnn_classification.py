@@ -1,3 +1,5 @@
+import json
+
 import pennylane as qml
 import jax
 import jax.numpy as jnp
@@ -79,7 +81,7 @@ class Qnn(BaseEstimator):
 
     def __init__(self, var_form, layers, backend, seed, ibm_device=None, ibm_token=None):
         assert var_form in ['hardware_efficient', 'tfim', 'ltfim']
-        assert backend in ['jax', 'ibmq']
+        assert backend in ['jax', 'ibmq', 'ibmq_config']
         self.var_form = var_form
         self.layers = layers
         self.circuit = None
@@ -107,6 +109,14 @@ class Qnn(BaseEstimator):
             device = qml.device('qiskit.ibmq', wires=self.n_qubits, backend=self.ibm_device,
                                 ibmqx_token=self.ibm_token, hub=IBM_QISKIT_HUB,
                                 group=IBM_QISKIT_GROUP, project=IBM_QISKIT_PROJECT)
+        elif self.backend == 'ibmq_config':
+            ibmq_config = json.load(open("ibmq_config.json"))
+            device = qml.device('qiskit.ibmq', wires=self.n_qubits,
+                                backend=self.ibm_device,
+                                ibmqx_token=ibmq_config["token"],
+                                hub=ibmq_config["hub"],
+                                group=ibmq_config["group"],
+                                project=ibmq_config["project"])
         else:
             raise ValueError(f"Backend {self.backend} is unknown")
         var_form_fn, params_per_layer = self.get_var_form(self.n_qubits)
