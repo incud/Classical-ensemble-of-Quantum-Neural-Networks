@@ -5,15 +5,25 @@ import pathlib
 import matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import MinMaxScaler
-from pickle import load
+from joblib import load
 
 @click.group()
 def main():
     pass
 
 @main.command()
-def run():
-    plot_first_experiment(directory_experiment='executions/jax/hardware_efficient/3/concrete/concrete',title="Prova")
+def run():   
+    for i in range(1, 11):
+        try:
+            dataset='/concrete/concrete'
+            plot_first_experiment(directory_experiment=f'executions/jax/hardware_efficient/{i}/{dataset}',title=f"Comparison between Full model and Ensembles with {i} layers")
+        except Exception:
+            print(f'\n====== ERROR AT: {i} ======\n')
+            pass
+        
+    plot_error_layers(directory_experiment='executions/jax/hardware_efficient/',dataset=f'{dataset}',title="Error of each model in terms of the number of layers")
+
+    #plot_first_experiment(directory_experiment='executions/jax/hardware_efficient/10/linear/n250_d05_e01_seed1001',title="Prova")
     #plot_first_experiment(directory_experiment='executions/jax/hardware_efficient/1/sin/n250_e01_seed1000',title="Provasin")
     #plot_first_experiment(directory_experiment='executions/jax/hardware_efficient/1/linear/n1000_d02_e01_seed1000',title="Prova1000")
     #plot_first_experiment(directory_experiment='executions/jax/hardware_efficient/1/linear/n250_d10_e01_seed3006',title="Prova_10")
@@ -33,8 +43,7 @@ def get_experiment_predictions(directory_experiment,model):
 def get_model_avg_error(directory_experiment,model):
     X_train,y_train,X_test,y_test = get_experiment_data(directory_experiment)
     predictions = get_experiment_predictions(directory_experiment,model)
-    
-    scaler = load(open(f'{directory_experiment}/scaler.pkl', 'rb'))
+    scaler = load(f'{directory_experiment}/scaler.pkl')
 
     errors = [mean_squared_error(scaler.inverse_transform(p.reshape(-1,1)),y_test) for p in predictions]
     
@@ -43,8 +52,20 @@ def get_model_avg_error(directory_experiment,model):
     
     return model_mean, model_std
     
-
     
+def get_model_errors(directory_experiment,dataset,model):
+    errors = []
+    for i in range(1,11):
+        try:
+            model_mean, model_std = get_model_avg_error(directory_experiment+f'{i}/{dataset}',model)
+            errors.append(model_mean)
+        except Exception:
+            print(f'\n====== ERROR AT: {i} ======\n')
+            pass        
+    return np.array(errors)
+
+
+
 # @main.command()
 # @click.option('--directory-experiment', type=click.Path(exists=True, dir_okay=True, file_okay=False), required=True)
 # @click.option('--title', type=str, required=True)
@@ -151,7 +172,49 @@ def plot_first_experiment(directory_experiment, title='Average MSE and std of th
             plt.legend()
             plt.savefig(f"{directory_experiment}/{model}/plot_predictions.png")
             plt.close('all')
+            
+            
+def plot_error_layers(directory_experiment, dataset, title=f"Error of each model in terms of the number of layers"):
 
+    plt.title(title)
+
+    x_ticks = ['full_model', 'bagging_feature03_sample02', 'bagging_feature03_sample10', 'bagging_feature05_sample02', 'bagging_feature05_sample10', 'bagging_feature08_sample02', 'bagging_feature08_sample10',  'adaboost']
+    markers = ['o', 'P', '8', 'x', 's', 'p']
+    count = 0
+    
+    # Plot of different ensemble models + baseline
+    for i, model in enumerate(x_ticks):
+        if model == 'full_model':
+            model_errors = get_model_errors(directory_experiment,dataset,model)
+            print('full_model',model_errors)
+            plt.plot(model_errors, marker="^")
+
+        elif model == 'adaboost':
+            model = model + "/ensemble_model"
+            model_errors = get_model_errors(directory_experiment,dataset,model)
+            print('adaboost',model_errors)
+            plt.plot(model_errors, marker="*")
+        else:
+            # Plot of bagging only
+            model = model + "/ensemble_model"
+            model_errors = get_model_errors(directory_experiment,dataset,model)
+            print('bagging',model_errors)
+            plt.plot(model_errors, marker=markers[count])
+            count += 1
+            
+#    plt.ylim((0, 0.5))
+    plt.ylabel('MSE')
+    plt.xlabel('Layers')
+    plt.legend(x_ticks)
+    plt.xticks(ticks=range(len(model_errors)),labels=np.arange(1, len(model_errors)+1,1))
+
+    #plt.xticks(ticks=range(len(x_ticks)), labels=x_ticks, rotation=-45)
+    plt.tight_layout()
+    save_dir = f"{directory_experiment}/plots_errors_layers/{dataset}"
+    os.makedirs(save_dir,  0o755,  exist_ok=True)
+    plt.savefig(save_dir + f"/{title}.png",dpi=600)
+    plt.close('all')
+    
 
 if __name__ == '__main__':
     main()
