@@ -150,7 +150,7 @@ def experiment(dataset, dataset_type, mode, ibm_device, ibm_token, varform, laye
     optimizer = optax.adam(learning_rate=0.1)
 
     # training options
-    runs = 2
+    runs = 10
     epochs = 150
 
     # full_model
