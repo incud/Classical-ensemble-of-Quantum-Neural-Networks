@@ -161,109 +161,109 @@ def experiment(dataset, dataset_type, mode, ibm_device, ibm_token, varform, laye
     # else:
     evaluate_full_model_predictor(qnn, optimizer, n_qubits, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, full_model_dir)
 
-    # # bagging 1
-    # n_estimators=10
-    # max_features=0.3
-    # max_samples=0.2
-    # bag_dir = working_dir / "bagging_feature03_sample02"
-    # os.makedirs(bag_dir,  0o755,  exist_ok=True)
-    # # number of qubits bagging
-    # n_qubits_bag=max(1,int(max_features*X_train.shape[1]))
-    # # quantum circuit
-    # qnn_tmp_bag = create_circuit(n_qubits_bag,backend,layers,varform)
-    # # apply vmap on x (first circuit param)
-    # qnn_batched_bag = jax.vmap(qnn_tmp_bag, (0, None))
-    # # Jit for faster execution
-    # qnn_bag_1 = jax.jit(qnn_batched_bag)
+    # bagging 1
+    n_estimators=10
+    max_features=0.3
+    max_samples=0.2
+    bag_dir = working_dir / "bagging_feature03_sample02"
+    os.makedirs(bag_dir,  0o755,  exist_ok=True)
+    # number of qubits bagging
+    n_qubits_bag=max(1,int(max_features*X_train.shape[1]))
+    # quantum circuit
+    qnn_tmp_bag = create_circuit(n_qubits_bag,backend,layers,varform,ibm_device, ibm_token)
+    # apply vmap on x (first circuit param)
+    qnn_batched_bag = jax.vmap(qnn_tmp_bag, (0, None))
+    # Jit for faster execution
+    qnn_bag_1 = jax.jit(qnn_batched_bag)
     
-    # # if any(pathlib.Path(bag_dir).iterdir()):
-    # #     print(f"The directory {bag_dir} is not empty, skipping this experiment")
-    # # else:
-    # evaluate_bagging_predictor(qnn_bag_1, n_estimators, max_features, max_samples, optimizer, n_qubits_bag, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
+    # if any(pathlib.Path(bag_dir).iterdir()):
+    #     print(f"The directory {bag_dir} is not empty, skipping this experiment")
+    # else:
+    evaluate_bagging_predictor(qnn_bag_1, n_estimators, max_features, max_samples, optimizer, n_qubits_bag, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
 
-    # # bagging 2
-    # n_estimators=10
-    # max_features=0.3
-    # max_samples=1.0
-    # bag_dir = working_dir / "bagging_feature03_sample10"
-    # os.makedirs(bag_dir,  0o755,  exist_ok=True)
-    # # if any(pathlib.Path(bag_dir).iterdir()):
-    # #     print(f"The directory {bag_dir} is not empty, skipping this experiment")
-    # # else:
-    # evaluate_bagging_predictor(qnn_bag_1, n_estimators, max_features, max_samples, optimizer, n_qubits, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
+    # bagging 2
+    n_estimators=10
+    max_features=0.3
+    max_samples=1.0
+    bag_dir = working_dir / "bagging_feature03_sample10"
+    os.makedirs(bag_dir,  0o755,  exist_ok=True)
+    # if any(pathlib.Path(bag_dir).iterdir()):
+    #     print(f"The directory {bag_dir} is not empty, skipping this experiment")
+    # else:
+    evaluate_bagging_predictor(qnn_bag_1, n_estimators, max_features, max_samples, optimizer, n_qubits, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
 
-    # # bagging 3
-    # n_estimators=10
-    # max_features=0.5
-    # max_samples=0.2
-    # bag_dir = working_dir / "bagging_feature05_sample02"
-    # os.makedirs(bag_dir,  0o755,  exist_ok=True)
-    # # number of qubits bagging
-    # n_qubits_bag=max(1,int(max_features*X_train.shape[1]))
-    # # quantum circuit
-    # qnn_tmp_bag = create_circuit(n_qubits_bag,backend,layers,varform)
-    # # apply vmap on x (first circuit param)
-    # qnn_batched_bag = jax.vmap(qnn_tmp_bag, (0, None))
-    # # Jit for faster execution
-    # qnn_bag_2 = jax.jit(qnn_batched_bag)
+    # bagging 3
+    n_estimators=10
+    max_features=0.5
+    max_samples=0.2
+    bag_dir = working_dir / "bagging_feature05_sample02"
+    os.makedirs(bag_dir,  0o755,  exist_ok=True)
+    # number of qubits bagging
+    n_qubits_bag=max(1,int(max_features*X_train.shape[1]))
+    # quantum circuit
+    qnn_tmp_bag = create_circuit(n_qubits_bag,backend,layers,varform,ibm_device, ibm_token)
+    # apply vmap on x (first circuit param)
+    qnn_batched_bag = jax.vmap(qnn_tmp_bag, (0, None))
+    # Jit for faster execution
+    qnn_bag_2 = jax.jit(qnn_batched_bag)
     
-    # # if any(pathlib.Path(bag_dir).iterdir()):
-    # #     print(f"The directory {bag_dir} is not empty, skipping this experiment")
-    # # else:
-    # evaluate_bagging_predictor(qnn_bag_2, n_estimators, max_features, max_samples, optimizer, n_qubits, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
+    # if any(pathlib.Path(bag_dir).iterdir()):
+    #     print(f"The directory {bag_dir} is not empty, skipping this experiment")
+    # else:
+    evaluate_bagging_predictor(qnn_bag_2, n_estimators, max_features, max_samples, optimizer, n_qubits, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
 
-    # # bagging 4
-    # n_estimators=10
-    # max_features=0.5
-    # max_samples=1.0
-    # bag_dir = working_dir / "bagging_feature05_sample10"
-    # os.makedirs(bag_dir,  0o755,  exist_ok=True)
-    # # if any(pathlib.Path(bag_dir).iterdir()):
-    # #     print(f"The directory {bag_dir} is not empty, skipping this experiment")
-    # # else:
-    # evaluate_bagging_predictor(qnn_bag_2, n_estimators, max_features, max_samples, optimizer, n_qubits, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
+    # bagging 4
+    n_estimators=10
+    max_features=0.5
+    max_samples=1.0
+    bag_dir = working_dir / "bagging_feature05_sample10"
+    os.makedirs(bag_dir,  0o755,  exist_ok=True)
+    # if any(pathlib.Path(bag_dir).iterdir()):
+    #     print(f"The directory {bag_dir} is not empty, skipping this experiment")
+    # else:
+    evaluate_bagging_predictor(qnn_bag_2, n_estimators, max_features, max_samples, optimizer, n_qubits, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
 
-    # # bagging 5
-    # n_estimators=10
-    # max_features=0.8
-    # max_samples=0.2
-    # bag_dir = working_dir / "bagging_feature08_sample02"
-    # os.makedirs(bag_dir,  0o755,  exist_ok=True)
-    # # number of qubits bagging
-    # n_qubits_bag=max(1,int(max_features*X_train.shape[1]))
-    # # quantum circuit
-    # qnn_tmp_bag = create_circuit(n_qubits_bag,backend,layers,varform)
-    # # apply vmap on x (first circuit param)
-    # qnn_batched_bag = jax.vmap(qnn_tmp_bag, (0, None))
-    # # Jit for faster execution
-    # qnn_bag_3 = jax.jit(qnn_batched_bag)
+    # bagging 5
+    n_estimators=10
+    max_features=0.8
+    max_samples=0.2
+    bag_dir = working_dir / "bagging_feature08_sample02"
+    os.makedirs(bag_dir,  0o755,  exist_ok=True)
+    # number of qubits bagging
+    n_qubits_bag=max(1,int(max_features*X_train.shape[1]))
+    # quantum circuit
+    qnn_tmp_bag = create_circuit(n_qubits_bag,backend,layers,varform,ibm_device, ibm_token)
+    # apply vmap on x (first circuit param)
+    qnn_batched_bag = jax.vmap(qnn_tmp_bag, (0, None))
+    # Jit for faster execution
+    qnn_bag_3 = jax.jit(qnn_batched_bag)
     
-    # # if any(pathlib.Path(bag_dir).iterdir()):
-    # #     print(f"The directory {bag_dir} is not empty, skipping this experiment")
-    # # else:
-    # evaluate_bagging_predictor(qnn_bag_3, n_estimators, max_features, max_samples, optimizer, n_qubits, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
+    # if any(pathlib.Path(bag_dir).iterdir()):
+    #     print(f"The directory {bag_dir} is not empty, skipping this experiment")
+    # else:
+    evaluate_bagging_predictor(qnn_bag_3, n_estimators, max_features, max_samples, optimizer, n_qubits, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
 
-    # # bagging 6
-    # n_estimators=10
-    # max_features=0.8
-    # max_samples=1.0
-    # bag_dir = working_dir / "bagging_feature08_sample10"
-    # os.makedirs(bag_dir,  0o755,  exist_ok=True)
-    # # if any(pathlib.Path(bag_dir).iterdir()):
-    # #     print(f"The directory {bag_dir} is not empty, skipping this experiment")
-    # # else:
-    # evaluate_bagging_predictor(qnn_bag_3, n_estimators, max_features, max_samples, optimizer, n_qubits, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
+    # bagging 6
+    n_estimators=10
+    max_features=0.8
+    max_samples=1.0
+    bag_dir = working_dir / "bagging_feature08_sample10"
+    os.makedirs(bag_dir,  0o755,  exist_ok=True)
+    # if any(pathlib.Path(bag_dir).iterdir()):
+    #     print(f"The directory {bag_dir} is not empty, skipping this experiment")
+    # else:
+    evaluate_bagging_predictor(qnn_bag_3, n_estimators, max_features, max_samples, optimizer, n_qubits, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
 
  
-    # # adaboost
-    # n_estimators = 10
-    # ada_dir = working_dir / "adaboost"
-    # os.makedirs(ada_dir, 0o755, exist_ok=True)
-    # # if any(pathlib.Path(ada_dir).iterdir()):
-    # #     print(f"The directory {ada_dir} is not empty, skipping this experiment")
-    # # else:
-    # evaluate_adaboost_predictor(qnn, n_estimators, optimizer, n_qubits, runs, epochs, layers, varform, X_train, X_test,
-    #                             y_train, y_test, ada_dir)
+    # adaboost
+    n_estimators = 10
+    ada_dir = working_dir / "adaboost"
+    os.makedirs(ada_dir, 0o755, exist_ok=True)
+    # if any(pathlib.Path(ada_dir).iterdir()):
+    #     print(f"The directory {ada_dir} is not empty, skipping this experiment")
+    # else:
+    evaluate_adaboost_predictor(qnn, n_estimators, optimizer, n_qubits, runs, epochs, layers, varform, X_train, X_test,
+                                y_train, y_test, ada_dir)
 
 
 if __name__ == '__main__':
