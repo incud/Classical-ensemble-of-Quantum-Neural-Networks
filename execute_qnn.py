@@ -136,7 +136,7 @@ def experiment(dataset, dataset_type, mode, ibm_device, ibm_token, varform, laye
     # if any(pathlib.Path(bag_dir).iterdir()):
     #     print(f"The directory {bag_dir} is not empty, skipping this experiment")
     # else:
-    evaluate_bagging_predictor(qnn_bag_1, n_estimators, max_features, max_samples, optimizer, n_qubits, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
+    evaluate_bagging_predictor(qnn_bag_1, n_estimators, max_features, max_samples, optimizer, n_qubits_bag, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
 
     # bagging 3
     n_estimators=10
@@ -156,7 +156,7 @@ def experiment(dataset, dataset_type, mode, ibm_device, ibm_token, varform, laye
     # if any(pathlib.Path(bag_dir).iterdir()):
     #     print(f"The directory {bag_dir} is not empty, skipping this experiment")
     # else:
-    evaluate_bagging_predictor(qnn_bag_2, n_estimators, max_features, max_samples, optimizer, n_qubits, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
+    evaluate_bagging_predictor(qnn_bag_2, n_estimators, max_features, max_samples, optimizer, n_qubits_bag, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
 
     # bagging 4
     n_estimators=10
@@ -167,7 +167,7 @@ def experiment(dataset, dataset_type, mode, ibm_device, ibm_token, varform, laye
     # if any(pathlib.Path(bag_dir).iterdir()):
     #     print(f"The directory {bag_dir} is not empty, skipping this experiment")
     # else:
-    evaluate_bagging_predictor(qnn_bag_2, n_estimators, max_features, max_samples, optimizer, n_qubits, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
+    evaluate_bagging_predictor(qnn_bag_2, n_estimators, max_features, max_samples, optimizer, n_qubits_bag, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
 
     # bagging 5
     n_estimators=10
@@ -187,7 +187,7 @@ def experiment(dataset, dataset_type, mode, ibm_device, ibm_token, varform, laye
     # if any(pathlib.Path(bag_dir).iterdir()):
     #     print(f"The directory {bag_dir} is not empty, skipping this experiment")
     # else:
-    evaluate_bagging_predictor(qnn_bag_3, n_estimators, max_features, max_samples, optimizer, n_qubits, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
+    evaluate_bagging_predictor(qnn_bag_3, n_estimators, max_features, max_samples, optimizer, n_qubits_bag, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
 
     # bagging 6
     n_estimators=10
@@ -198,7 +198,7 @@ def experiment(dataset, dataset_type, mode, ibm_device, ibm_token, varform, laye
     # if any(pathlib.Path(bag_dir).iterdir()):
     #     print(f"The directory {bag_dir} is not empty, skipping this experiment")
     # else:
-    evaluate_bagging_predictor(qnn_bag_3, n_estimators, max_features, max_samples, optimizer, n_qubits, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
+    evaluate_bagging_predictor(qnn_bag_3, n_estimators, max_features, max_samples, optimizer, n_qubits_bag, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
 
     # adaboost
     n_estimators=10

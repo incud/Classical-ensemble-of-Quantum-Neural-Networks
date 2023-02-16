@@ -2,7 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 import click
-from sklearn.datasets import load_diabetes, load_iris
+from sklearn.datasets import load_diabetes, load_wine
 
 
 @click.group()
@@ -120,14 +120,14 @@ def concrete_dataset_c(scaled=False):
 
     
 @main.command()
-def iris_dataset():
-    iris_dataset_c()
+def wine_dataset():
+    wine_dataset_c()
 
 
-def iris_dataset_c():
-    directory = 'datasets/iris'
+def wine_dataset_c():
+    directory = 'datasets/wine'
     os.makedirs(directory, exist_ok=True)
-    X,y = load_iris(return_X_y=True)
+    X, y = load_wine(return_X_y=True)
     # ADD SOME PREPROCESSING HERE?
     np.save(f"{directory}/X.npy", X)
     np.save(f"{directory}/y.npy", y)
@@ -143,8 +143,8 @@ def run():
     
     #diabete_dataset_c()
     #diabete_dataset_c()
-    concrete_dataset_c()
-    iris_dataset_c()
+    #concrete_dataset_c()
+    wine_dataset_c()
 
 if __name__ == '__main__':
     main()

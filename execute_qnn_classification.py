@@ -45,9 +45,6 @@ def experiment(dataset, dataset_type, mode, ibm_device, ibm_token, varform, laye
     # split training and testing dataset
     X = np.load(dataset / "X.npy")
     y = np.load(dataset / "y.npy")
-    from sklearn.datasets import load_wine
-    X, y = load_wine(return_X_y=True)
-    print(X,y)
 
     scalerX = MinMaxScaler(feature_range=(-1, 1))
     scaler = OneHotEncoder(sparse_output=False)
@@ -138,7 +135,7 @@ def experiment(dataset, dataset_type, mode, ibm_device, ibm_token, varform, laye
     backend = mode
 
     # quantum circuit
-    qnn_tmp = create_circuit(n_qubits, backend, layers, varform)
+    qnn_tmp = create_circuit(n_qubits, backend, layers, varform,ibm_device, ibm_token)
 
     # apply vmap on x (first circuit param)
     qnn_batched = jax.vmap(qnn_tmp, (0, None))
@@ -190,7 +187,7 @@ def experiment(dataset, dataset_type, mode, ibm_device, ibm_token, varform, laye
     # if any(pathlib.Path(bag_dir).iterdir()):
     #     print(f"The directory {bag_dir} is not empty, skipping this experiment")
     # else:
-    evaluate_bagging_predictor(qnn_bag_1, n_estimators, max_features, max_samples, optimizer, n_qubits, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
+    evaluate_bagging_predictor(qnn_bag_1, n_estimators, max_features, max_samples, optimizer, n_qubits_bag, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
 
     # bagging 3
     n_estimators=10
@@ -210,7 +207,7 @@ def experiment(dataset, dataset_type, mode, ibm_device, ibm_token, varform, laye
     # if any(pathlib.Path(bag_dir).iterdir()):
     #     print(f"The directory {bag_dir} is not empty, skipping this experiment")
     # else:
-    evaluate_bagging_predictor(qnn_bag_2, n_estimators, max_features, max_samples, optimizer, n_qubits, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
+    evaluate_bagging_predictor(qnn_bag_2, n_estimators, max_features, max_samples, optimizer, n_qubits_bag, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
 
     # bagging 4
     n_estimators=10
@@ -221,7 +218,7 @@ def experiment(dataset, dataset_type, mode, ibm_device, ibm_token, varform, laye
     # if any(pathlib.Path(bag_dir).iterdir()):
     #     print(f"The directory {bag_dir} is not empty, skipping this experiment")
     # else:
-    evaluate_bagging_predictor(qnn_bag_2, n_estimators, max_features, max_samples, optimizer, n_qubits, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
+    evaluate_bagging_predictor(qnn_bag_2, n_estimators, max_features, max_samples, optimizer, n_qubits_bag, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
 
     # bagging 5
     n_estimators=10
@@ -241,7 +238,7 @@ def experiment(dataset, dataset_type, mode, ibm_device, ibm_token, varform, laye
     # if any(pathlib.Path(bag_dir).iterdir()):
     #     print(f"The directory {bag_dir} is not empty, skipping this experiment")
     # else:
-    evaluate_bagging_predictor(qnn_bag_3, n_estimators, max_features, max_samples, optimizer, n_qubits, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
+    evaluate_bagging_predictor(qnn_bag_3, n_estimators, max_features, max_samples, optimizer, n_qubits_bag, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
 
     # bagging 6
     n_estimators=10
@@ -252,7 +249,7 @@ def experiment(dataset, dataset_type, mode, ibm_device, ibm_token, varform, laye
     # if any(pathlib.Path(bag_dir).iterdir()):
     #     print(f"The directory {bag_dir} is not empty, skipping this experiment")
     # else:
-    evaluate_bagging_predictor(qnn_bag_3, n_estimators, max_features, max_samples, optimizer, n_qubits, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
+    evaluate_bagging_predictor(qnn_bag_3, n_estimators, max_features, max_samples, optimizer, n_qubits_bag, runs, epochs, layers, varform, X_train, X_test, y_train, y_test, bag_dir)
 
  
     # adaboost
@@ -264,6 +261,14 @@ def experiment(dataset, dataset_type, mode, ibm_device, ibm_token, varform, laye
     # else:
     evaluate_adaboost_predictor(qnn, n_estimators, optimizer, n_qubits, runs, epochs, layers, varform, X_train, X_test,
                                 y_train, y_test, ada_dir)
+    
+    ######### Classical AdaBoost (DecisionTrees)
+    # from sklearn.ensemble import AdaBoostClassifier
+    # clf = AdaBoostClassifier(n_estimators=10)
+    # clf.fit(X_train, np.argmax(y_train,axis=1))
+    # y_predict=clf.predict(X_test)
+    # from sklearn.metrics import accuracy_score
+    # print(f'Accuracy of bagging on test set: {accuracy_score(np.argmax(y_test,axis=1),y_predict)}\n')
 
 
 if __name__ == '__main__':

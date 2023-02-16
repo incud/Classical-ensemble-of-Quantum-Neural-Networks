@@ -111,7 +111,8 @@ def evaluate_bagging_predictor(qnn, n_estimators, max_features, max_samples, opt
             for epoch in range(epochs):
                 key = jax.random.split(key)[0]
                 params, opt_state, cost = optimizer_update(opt_state, params, X_train_est, y_train_est)
-                print(f'epoch: {epoch} - cost: {cost}')
+                if epoch % 5 == 0:
+                    print(f'epoch: {epoch} - cost: {cost}')
             print()
     
             end_time_tr = time.time()-start_time_tr
@@ -211,7 +212,8 @@ def evaluate_full_model_predictor(qnn, optimizer, n_qubits, runs, epochs, layers
         for epoch in range(epochs):
             key = jax.random.split(key)[0]
             params, opt_state, cost = optimizer_update(opt_state, params, X_train, y_train)
-            print(f'epoch: {epoch} - cost: {cost}')
+            if epoch % 5 == 0:
+                print(f'epoch: {epoch} - cost: {cost}')
         print()
 
         end_time_tr = time.time()-start_time_tr
@@ -351,7 +353,8 @@ def evaluate_adaboost_predictor(qnn, n_estimators, optimizer, n_qubits, runs, ep
             for epoch in range(epochs):
                 key = jax.random.split(key)[0]
                 params, opt_state, cost = optimizer_update(opt_state, params, X_train_est, y_train_est)
-                print(f'epoch: {epoch} - cost: {cost}')
+                if epoch % 5 == 0:
+                    print(f'epoch: {epoch} - cost: {cost}')
             print()
 
             estimators_params.append(params)
