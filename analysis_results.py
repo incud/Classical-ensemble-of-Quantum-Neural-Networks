@@ -7,6 +7,18 @@ from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import MinMaxScaler
 from joblib import load
 
+import matplotlib.style as style
+import matplotlib.colors as mcolors
+import matplotlib.ticker as mticker
+import seaborn as sns
+#sns.set_style('darkgrid') # darkgrid, white grid, dark, white and ticks
+
+style.use('seaborn-v0_8-paper') #sets the size of the charts (paper/talk/poster)
+#plt.rc('font', size=24)
+plt.rcParams["font.family"] = "serif"
+plt.rcParams["mathtext.fontset"] = "dejavuserif"
+plt.rcParams.update({'lines.markeredgewidth': 1})
+
 @click.group()
 def main():
     pass
@@ -15,7 +27,7 @@ def main():
 def run():   
     for i in range(1, 11):
         try:
-            dataset='/concrete/concrete'
+            dataset='/diabete/diabete'
             plot_first_experiment(directory_experiment=f'executions/jax/hardware_efficient/{i}/{dataset}',title=f"Comparison between Full model and Ensembles with {i} layers")
         except Exception:
             print(f'\n====== ERROR AT: {i} ======\n')
@@ -72,6 +84,7 @@ def get_model_errors(directory_experiment,dataset,model):
 def plot_first_experiment(directory_experiment, title='Average MSE and std of the models'):
 
     plt.title(title)
+    #plt.grid()
 
     x_ticks = ['full_model', 'bagging_feature03_sample02', 'bagging_feature03_sample10', 'bagging_feature05_sample02', 'bagging_feature05_sample10', 'bagging_feature08_sample02', 'bagging_feature08_sample10',  'adaboost']
 
@@ -80,32 +93,35 @@ def plot_first_experiment(directory_experiment, title='Average MSE and std of th
         if model == 'full_model':
             model_mean, model_std = get_model_avg_error(directory_experiment,model)
             print('full_model',model_mean,model_std)
-            plt.errorbar([i], y=[model_mean], yerr=[model_std], c='green', elinewidth=5.0)
-            plt.scatter([i], [model_mean], c='green', s=120.0, zorder=100)
+            plt.bar(i, model_mean, yerr=model_std, align='center', alpha=0.5, ecolor='black', capsize=10)
+            #plt.errorbar([i], y=[model_mean], yerr=[model_std], c='green', elinewidth=5.0)
+            #plt.scatter([i], [model_mean], c='green', s=120.0, zorder=100)
 
         elif model == 'adaboost':
             model = model + "/ensemble_model"
             model_mean, model_std = get_model_avg_error(directory_experiment,model)
             print('adaboost',model_mean,model_std)
-            plt.errorbar([i], y=[model_mean], yerr=[model_std], c='green', elinewidth=5.0)
-            plt.scatter([i], [model_mean], c='green', s=120.0, zorder=100)
+            plt.bar(i, model_mean, yerr=model_std, align='center', alpha=0.5, ecolor='black', capsize=10)
+            #plt.errorbar([i], y=[model_mean], yerr=[model_std], c='green', elinewidth=5.0)
+            #plt.scatter([i], [model_mean], c='green', s=120.0, zorder=100)
         else:
             # Plot of bagging only
             model = model + "/ensemble_model"
             model_mean, model_std = get_model_avg_error(directory_experiment,model)
             print('bagging',model_mean,model_std)       
-            plt.errorbar([i], y=[model_mean], yerr=[model_std], c='green', elinewidth=5.0)
-            plt.scatter([i], [model_mean], c='green', s=120.0, zorder=100)
+            plt.bar(i, model_mean, yerr=model_std, align='center', alpha=0.5, ecolor='black', capsize=10)
+            #plt.errorbar([i], y=[model_mean], yerr=[model_std], c='green', elinewidth=5.0)
+            #plt.scatter([i], [model_mean], c='green', s=120.0, zorder=100)
             
 #    plt.ylim((0, 0.5))
-    plt.xlim((-0.2, len(x_ticks)-1+0.2))
+    plt.xlim((-0.6, len(x_ticks)-1+0.6))
     plt.ylabel('Avg MSE and std over 10 runs')
     plt.xlabel('ensemble model')
-    plt.xticks(ticks=range(len(x_ticks)), labels=x_ticks, rotation=-45)
+    plt.xticks(ticks=range(len(x_ticks)), labels=x_ticks, rotation=45)
     plt.tight_layout()
     save_dir = f"{directory_experiment}/plots_errorbars"
     os.makedirs(save_dir,  0o755,  exist_ok=True)
-    plt.savefig(save_dir + f"/{title}.png")
+    plt.savefig(save_dir + f"/{title}.png",dpi=600)
     plt.close('all')
     
     # Plot of each ensemble model + its estimators
@@ -119,26 +135,29 @@ def plot_first_experiment(directory_experiment, title='Average MSE and std of th
                 model_est = model + f"/estimator_{j}"
                 model_mean, model_std = get_model_avg_error(directory_experiment,model_est)
                 print(f'bagging estimator {j}',model_mean,model_std)       
-                plt.errorbar([j], y=[model_mean], yerr=[model_std], c='green', elinewidth=5.0)
-                plt.scatter([j], [model_mean], c='green', s=120.0, zorder=100)
+                plt.bar(j, model_mean, yerr=model_std, align='center', alpha=0.5, ecolor='black', capsize=10)
+                #plt.errorbar([j], y=[model_mean], yerr=[model_std], c='green', elinewidth=5.0)
+                #plt.scatter([j], [model_mean], c='green', s=120.0, zorder=100)
             # bagging model
             model_bag = model + f"/ensemble_model"
             model_mean, model_std = get_model_avg_error(directory_experiment,model_bag)
             print('bagging',model_mean,model_std)       
-            plt.errorbar([j+1], y=[model_mean], yerr=[model_std], c='red', elinewidth=5.0)
-            plt.scatter([j+1], [model_mean], c='red', s=120.0, zorder=100)
+            plt.bar(j+1, model_mean, yerr=model_std, align='center', alpha=0.5, ecolor='black', capsize=10)
+            #plt.errorbar([j+1], y=[model_mean], yerr=[model_std], c='red', elinewidth=5.0)
+            #plt.scatter([j+1], [model_mean], c='red', s=120.0, zorder=100)
 
             #plt.ylim((0, 0.5))
-            plt.xlim((-0.2, len(estimators_ticks)+0.2))
+            plt.xlim((-0.6, len(estimators_ticks)+0.6))
             plt.ylabel('Avg MSE and std over 10 runs')
             plt.xlabel(model)
             estimators_ticks_tmp = estimators_ticks.copy()
             estimators_ticks_tmp.append('bagging')
-            plt.xticks(ticks=range(len(estimators_ticks_tmp)), labels=estimators_ticks_tmp, rotation=-45)
+            plt.xticks(ticks=range(len(estimators_ticks_tmp)), labels=estimators_ticks_tmp, rotation=45)
             plt.tight_layout()
+            #plt.grid()
             save_dir = f"{directory_experiment}/plots_errorbars"
             os.makedirs(save_dir,  0o755,  exist_ok=True)
-            plt.savefig(save_dir + f"/{title}_{model}.png")
+            plt.savefig(save_dir + f"/{title}_{model}.png",dpi=600)
             plt.close('all')
         
     # Plot of predictions for each ensemble model + baseline
@@ -150,7 +169,8 @@ def plot_first_experiment(directory_experiment, title='Average MSE and std of th
             plt.scatter(X_test[:,0], y_test, label='Original points')
             plt.scatter(X_test[:,0], scaler.inverse_transform((predictions[0]).reshape(-1,1)), c='y', label='Predicted points')
             plt.legend()
-            plt.savefig(f"{directory_experiment}/{model}/plot_predictions.png")
+            plt.grid()
+            plt.savefig(f"{directory_experiment}/{model}/plot_predictions.png",dpi=600)
             plt.close('all')
 
         elif model == 'adaboost':
@@ -160,7 +180,8 @@ def plot_first_experiment(directory_experiment, title='Average MSE and std of th
             plt.scatter(X_test[:,0], y_test, label='Original points')
             plt.scatter(X_test[:,0], scaler.inverse_transform((predictions[0]).reshape(-1,1)), c='y', label='Predicted points')
             plt.legend()
-            plt.savefig(f"{directory_experiment}/{model}/plot_predictions.png")
+            plt.grid()
+            plt.savefig(f"{directory_experiment}/{model}/plot_predictions.png",dpi=600)
             plt.close('all')
         else:
             # Plot of bagging only
@@ -170,7 +191,8 @@ def plot_first_experiment(directory_experiment, title='Average MSE and std of th
             plt.scatter(X_test[:,0], y_test, label='Original points')
             plt.scatter(X_test[:,0], scaler.inverse_transform((predictions[0]).reshape(-1,1)), c='y', label='Predicted points')
             plt.legend()
-            plt.savefig(f"{directory_experiment}/{model}/plot_predictions.png")
+            plt.grid()
+            plt.savefig(f"{directory_experiment}/{model}/plot_predictions.png",dpi=600)
             plt.close('all')
             
             
@@ -187,13 +209,13 @@ def plot_error_layers(directory_experiment, dataset, title=f"Error of each model
         if model == 'full_model':
             model_errors = get_model_errors(directory_experiment,dataset,model)
             print('full_model',model_errors)
-            plt.plot(model_errors, marker="^")
+            plt.plot(model_errors, marker="^")#, color='blue')
 
         elif model == 'adaboost':
             model = model + "/ensemble_model"
             model_errors = get_model_errors(directory_experiment,dataset,model)
             print('adaboost',model_errors)
-            plt.plot(model_errors, marker="*")
+            plt.plot(model_errors, marker="*")#, color='orangered')
         else:
             # Plot of bagging only
             model = model + "/ensemble_model"
@@ -205,11 +227,12 @@ def plot_error_layers(directory_experiment, dataset, title=f"Error of each model
 #    plt.ylim((0, 0.5))
     plt.ylabel('MSE')
     plt.xlabel('Layers')
-    plt.legend(x_ticks)
+    plt.legend(x_ticks, loc='upper center')
     plt.xticks(ticks=range(len(model_errors)),labels=np.arange(1, len(model_errors)+1,1))
 
     #plt.xticks(ticks=range(len(x_ticks)), labels=x_ticks, rotation=-45)
     plt.tight_layout()
+    #plt.grid()
     save_dir = f"{directory_experiment}/plots_errors_layers/{dataset}"
     os.makedirs(save_dir,  0o755,  exist_ok=True)
     plt.savefig(save_dir + f"/{title}.png",dpi=600)
