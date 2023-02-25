@@ -34,12 +34,86 @@ def run():
             print(f'\n====== ERROR AT: {i} ======\n')
             pass
         
-    plot_error_layers(directory_experiment='executions/jax/hardware_efficient/',dataset=f'{dataset}',title="Accuracy of each model in terms of the number of layers")
+    plot_error_layers(directory_experiment='executions/jax/hardware_efficient/',dataset=f'{dataset}',title="Accuracy of Experiment IV")
 
     #plot_first_experiment(directory_experiment='executions/jax/hardware_efficient/10/linear/n250_d05_e01_seed1001',title="Prova")
     #plot_first_experiment(directory_experiment='executions/jax/hardware_efficient/1/sin/n250_e01_seed1000',title="Provasin")
     #plot_first_experiment(directory_experiment='executions/jax/hardware_efficient/1/linear/n1000_d02_e01_seed1000',title="Prova1000")
     #plot_first_experiment(directory_experiment='executions/jax/hardware_efficient/1/linear/n250_d10_e01_seed3006',title="Prova_10")
+    
+    
+    
+    
+@main.command()
+def plotvariance():   
+    datasets=['/wine/wine']
+    all_models = ['bagging_feature03_sample02', 'bagging_feature03_sample10', 'bagging_feature05_sample02', 'bagging_feature05_sample10', 'bagging_feature08_sample02', 'bagging_feature08_sample10']#,  'adaboost']
+    for dataset in datasets:
+        models = ['full_model']
+        for i in range(0,len(all_models),2):
+            tmp_models = []
+            tmp_models.append(models[0])
+            tmp_models.append(all_models[i])
+            tmp_models.append(all_models[i+1])
+            plot_layers_variance(directory_experiment=f'executions/jax/hardware_efficient/',dataset=dataset,models=tmp_models,title=f"Comparison between Full model and Ensembles")
+        models.append('adaboost')
+        plot_layers_variance(directory_experiment=f'executions/jax/hardware_efficient/',dataset=dataset,models=models,title=f"Comparison between Full model and Ensembles")
+
+    #plot_first_experiment(directory_experiment='executions/jax/hardware_efficient/10/linear/n250_d05_e01_seed1001',title="Prova")
+    
+def plot_layers_variance(directory_experiment,dataset,models,title):
+    plt.title(title)
+    print(models)
+    x_ticks = models#, 'bagging_feature05_sample02', 'bagging_feature05_sample10', 'bagging_feature08_sample02', 'bagging_feature08_sample10',  'adaboost']
+    #markers = ['o', 'P', '8', 'x', 's', 'p']
+    plt.xticks(ticks=range(1,11))
+    # Plot of different ensemble models + baseline
+    for i, model in enumerate(x_ticks):
+        if model == 'full_model':
+            model_errors_fm, model_std_fm = get_model_errors_std(directory_experiment,dataset,model)
+            plt.fill_between(range(1,11),  model_errors_fm - model_std_fm, 
+                            model_errors_fm + model_std_fm, 
+                            alpha=0.2)
+            plt.plot(range(1,11), model_errors_fm, label=f'Full Model')#Avg Loss 
+        elif model == 'adaboost':
+            model = model + "/ensemble_model"
+            model_errors_adaboost, model_std_adaboost = get_model_errors_std(directory_experiment,dataset,model)
+            plt.fill_between(range(1,11),  model_errors_adaboost - model_std_adaboost, 
+                model_errors_adaboost + model_std_adaboost, 
+                alpha=0.2)
+            plt.plot(range(1,11), model_errors_adaboost, label=f'AdaBoost')#Avg Loss
+        else:
+            # Plot of bagging only
+            model = model + "/ensemble_model"
+            model_errors_bag, model_std_bag = get_model_errors_std(directory_experiment,dataset,model)
+            plt.fill_between(range(1,11),  model_errors_bag - model_std_bag, 
+                model_errors_bag + model_std_bag, 
+                alpha=0.2)
+            plt.plot(range(1,11), model_errors_bag, label=f'{models[i]}')#Avg Loss
+
+    plt.xlabel('Layers')
+    plt.ylabel('Average Mean Squared Error')   #Change with appropriate loss
+    plt.tight_layout()
+    plt.legend()#['Training Loss', 'Test Loss']
+    save_dir = f"{directory_experiment}/plots_layersVariance/{dataset}/{models[1]}"
+    os.makedirs(save_dir,  0o755,  exist_ok=True)
+    plt.savefig(save_dir + f"/{title}.png",dpi=600)
+    #plt.show()
+    plt.close('all')
+
+def get_model_errors_std(directory_experiment,dataset,model):
+    errors = []
+    std = []
+    for i in range(1,11):
+        try:
+            model_mean, model_std = get_model_avg_error(directory_experiment+f'{i}/{dataset}',model)
+            errors.append(model_mean)
+            std.append(model_std)
+        except Exception:
+            print(f'\n====== ERROR AT: {i} ======\n')
+            pass        
+    return np.array(errors), np.array(std)    
+    
     
     
 def get_experiment_data(directory_experiment):
@@ -191,7 +265,7 @@ def plot_first_experiment(directory_experiment, title='Average Accuracy and std 
             plt.close('all')
             
             
-def plot_error_layers(directory_experiment, dataset, title=f"Error of each model in terms of the number of layers"):
+def plot_error_layers(directory_experiment, dataset, title=f"Accuracy of Experiment IV"):
 
     plt.title(title)
 
@@ -223,7 +297,7 @@ def plot_error_layers(directory_experiment, dataset, title=f"Error of each model
     plt.ylabel('Accuracy')
     plt.xlabel('Layers')
     plt.xticks(ticks=range(len(model_errors)),labels=np.arange(1, len(model_errors)+1,1))
-    plt.legend(x_ticks, loc='upper center')
+    plt.legend(x_ticks, loc='best')
     #plt.xticks(ticks=range(len(x_ticks)), labels=x_ticks, rotation=-45)
     plt.tight_layout()
     save_dir = f"{directory_experiment}/plots_errors_layers/{dataset}"
