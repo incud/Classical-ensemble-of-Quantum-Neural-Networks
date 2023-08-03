@@ -26,13 +26,13 @@ def main():
 
 @main.command()
 def run():
-    for i in range(1, 11):
-        try:
-            dataset='/wine/wine'
-            plot_first_experiment(directory_experiment=f'executions/jax/hardware_efficient/{i}/{dataset}',title=f"Comparison between Full model and Ensembles with {i} layers")
-        except Exception:
-            print(f'\n====== ERROR AT: {i} ======\n')
-            pass
+    dataset='/wine/wine'
+    # for i in range(1, 11):
+        # try:
+            # plot_first_experiment(directory_experiment=f'executions/jax/hardware_efficient/{i}/{dataset}',title=f"Comparison between Full model and Ensembles with {i} layers")
+        # except Exception:
+            # print(f'\n====== ERROR AT: {i} ======\n')
+            # pass
         
     plot_error_layers(directory_experiment='executions/jax/hardware_efficient/',dataset=f'{dataset}',title="Accuracy of Experiment IV")
 
@@ -135,7 +135,6 @@ def get_model_avg_error(directory_experiment,model):
 
     model_mean = np.average(errors)
     model_std = np.std(errors)
-    
     return model_mean, model_std
     
     
@@ -266,8 +265,14 @@ def plot_first_experiment(directory_experiment, title='Average Accuracy and std 
             
             
 def plot_error_layers(directory_experiment, dataset, title=f"Accuracy of Experiment IV"):
-
-    plt.title(title)
+    #MEDIUM_SIZE = 12
+    #plt.rc('font', size=MEDIUM_SIZE)          # controls default text sizes
+    #plt.rc('axes', titlesize=MEDIUM_SIZE)     # fontsize of the axes title
+    #plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
+    #plt.rc('xtick', labelsize=MEDIUM_SIZE)    # fontsize of the tick labels
+    #plt.rc('ytick', labelsize=MEDIUM_SIZE)    # fontsize of the tick labels
+    #plt.rc('legend', fontsize=11)    # legend fontsize
+    #plt.title(title)
 
     x_ticks = ['full_model', 'bagging_feature03_sample02', 'bagging_feature03_sample10', 'bagging_feature05_sample02', 'bagging_feature05_sample10', 'bagging_feature08_sample02', 'bagging_feature08_sample10',  'adaboost']
     markers = ['o', 'P', '8', 'x', 's', 'p']
@@ -289,7 +294,12 @@ def plot_error_layers(directory_experiment, dataset, title=f"Accuracy of Experim
             # Plot of bagging only
             model = model + "/ensemble_model"
             model_errors = get_model_errors(directory_experiment,dataset,model)
-            print('bagging',model_errors)
+            model_errors_even = model_errors[[1,3,5,7,9]]
+            print(model)
+            for i in range(len(model_errors_even)):
+                model_errors_even[i] = round(model_errors_even[i], 3)
+                print(model_errors_even[i],'&', end=' ')
+            print('\n')
             plt.plot(model_errors, marker=markers[count])
             count += 1
             
@@ -297,6 +307,7 @@ def plot_error_layers(directory_experiment, dataset, title=f"Accuracy of Experim
     plt.ylabel('Accuracy')
     plt.xlabel('Layers')
     plt.xticks(ticks=range(len(model_errors)),labels=np.arange(1, len(model_errors)+1,1))
+    x_ticks = ['FM', 'Bag_0.3_0.2', 'Bag_0.3_1.0', 'Bag_0.5_0.2', 'Bag_0.5_1.0', 'Bag_0.8_0.2', 'Bag_0.8_1.0',  'AdaBoost']
     plt.legend(x_ticks, loc='best')
     #plt.xticks(ticks=range(len(x_ticks)), labels=x_ticks, rotation=-45)
     plt.tight_layout()
