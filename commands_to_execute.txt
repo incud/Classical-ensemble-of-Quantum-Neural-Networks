@@ -6,6 +6,8 @@ python execute_qnn_diabete.py experiment --dataset datasets/diabete --dataset-ty
 
 python execute_qnn.py experiment --dataset datasets/linear/n250_d05_e01_seed1001 --dataset-type linear --mode jax --varform hardware_efficient --layers 1 --seed 1000
 
+python execute_qnn_noise.py experiment --dataset datasets/linear/n250_d05_e01_seed1001 --dataset-type linear --mode jax --varform hardware_efficient --layers 1 --seed 1000
+
 Commands to run ALL simulations of a given dataset:
 
 sh run_execute_qnn_concrete.sh 

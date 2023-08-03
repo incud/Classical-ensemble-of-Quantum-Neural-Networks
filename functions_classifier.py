@@ -92,7 +92,9 @@ def evaluate_bagging_predictor(qnn, n_estimators, max_features, max_samples, opt
         
         # array to gather estimators' predictions
         predictions = []
+        predictions_train = []
         predictions_softmax = []
+        predictions_softmax_train = []
                 
         for j in range(n_estimators):
             
@@ -144,8 +146,12 @@ def evaluate_bagging_predictor(qnn, n_estimators, max_features, max_samples, opt
             y_predict = qnn(X_test[:,random_estimator_features], params)
             y_predict = jax.nn.softmax(y_predict)
             y_predict_softmax = y_predict.copy()
+            y_predict_train = qnn(X_train[:,random_estimator_features], params)
+            y_predict_train = jax.nn.softmax(y_predict_train)
+            y_predict_softmax_train = y_predict_train.copy()
             print(f'Error of bagging estimator {j} on test set: {cross_entropy_loss(y_test_ohe,y_predict)}\n')
             y_predict = jnp.argmax(y_predict, axis=1)
+            y_predict_train = jnp.argmax(y_predict_train, axis=1)
             end_time_ts = time.time()-start_time_ts
             np.save(str(save_dir) + f"/time_test_{i}.npy",end_time_ts)
 
@@ -153,7 +159,9 @@ def evaluate_bagging_predictor(qnn, n_estimators, max_features, max_samples, opt
             np.save(str(save_dir) + f"/y_predict_{i}.npy", y_predict)
             print(f'Accuracy of bagging estimator {j} on test set: {accuracy_score(y_test,y_predict)}\n')
             predictions.append(y_predict)
+            predictions_train.append(y_predict_train)
             predictions_softmax.append(y_predict_softmax)
+            predictions_softmax_train.append(y_predict_softmax_train)
                 
         print(f'bagging - run {i} - bagging model {i}\n')
         
@@ -163,7 +171,9 @@ def evaluate_bagging_predictor(qnn, n_estimators, max_features, max_samples, opt
         
         # transform list of predictions into an array
         predictions = np.array(predictions)
+        predictions_train = np.array(predictions_train)
         predictions_softmax = np.array(predictions_softmax)
+        predictions_softmax_train = np.array(predictions_softmax_train)
 
         ##### predict #####
         start_time_ts = time.time() 
@@ -173,25 +183,30 @@ def evaluate_bagging_predictor(qnn, n_estimators, max_features, max_samples, opt
         if maj_voting:
             # compute mode (majority voting) of estimators' predictions
             y_predict = jnp.mode(predictions).reshape(-1,1)
+            y_predict_train = jnp.mode(predictions_train).reshape(-1,1)
             
             end_time_ts = time.time()-start_time_ts
             np.save(str(save_dir) + f"/time_test_{i}.npy",end_time_ts)
             
             # save predictions
             np.save(str(save_dir) + f"/y_predict_{i}.npy", y_predict)
+            np.save(str(save_dir) + f"/y_predict_train_{i}.npy", y_predict_train)
             print(f'Accuracy of bagging on test set: {accuracy_score(y_test,y_predict)}\n')
         
         else:
             # compute average of estimators' predictions
             y_predict = jnp.mean(predictions_softmax,axis=0).reshape(-1,3)
+            y_predict_train = jnp.mean(predictions_softmax_train,axis=0).reshape(-1,3)
             print(f'Error of bagging on test set: {cross_entropy_loss(y_test_ohe,y_predict)}\n')
     
             y_predict = jnp.argmax(y_predict, axis=1)
+            y_predict_train = jnp.argmax(y_predict_train, axis=1)
             end_time_ts = time.time()-start_time_ts
             np.save(str(save_dir) + f"/time_test_{i}.npy",end_time_ts)
             
             # save predictions
             np.save(str(save_dir) + f"/y_predict_{i}.npy", y_predict)
+            np.save(str(save_dir) + f"/y_predict_train_{i}.npy", y_predict_train)
             print(f'Accuracy of bagging on test set: {accuracy_score(y_test,y_predict)}\n')
         
         # Plot 3D data
@@ -286,6 +301,12 @@ def evaluate_full_model_predictor(qnn, optimizer, n_qubits, runs, epochs, layers
         # save parameters
         thetas = get_thetas(params)
         np.save(str(save_dir) + f"/thetas_{i}.npy", thetas)
+        
+        ##### predict train #####
+        y_predict_train = qnn(X_train, params)
+        y_predict_train = jax.nn.softmax(y_predict_train)
+        y_predict_train = jnp.argmax(y_predict_train, axis=1)
+        np.save(str(save_dir) + f"/y_predict_train_{i}.npy", y_predict_train)
         
         ##### predict #####
         start_time_ts = time.time() 
@@ -479,6 +500,24 @@ def evaluate_adaboost_predictor(qnn, n_estimators, optimizer, n_qubits, runs, ep
         end_time_ts = time.time()-start_time_ts
         np.save(str(save_dir) + f"/time_test_{i}.npy",end_time_ts)
         
+        
+        ##### predict train #####
+        start_time_ts = time.time() 
+        
+        s = np.empty((n_estimators,len(y_train_argmax),num_classes))
+        for t, params in enumerate(estimators_params):
+            y_predict_train = qnn(X_train, params)
+            y_predict_train = jax.nn.softmax(y_predict_train)
+            y_predict_softmax_train = y_predict_train.copy()
+            
+            s[t,:,:] = (num_classes-1)*(jnp.log(y_predict_softmax_train)-((1/num_classes)*(jnp.sum(jnp.log(y_predict_softmax_train),axis=1)[:, jnp.newaxis])))
+            
+        y_predict_train = jnp.sum(s,axis=0)
+        y_predict_train = jnp.argmax(y_predict_train,axis=1)
+        
+        
+        
         # save predictions
         np.save(str(save_dir) + f"/y_predict_{i}.npy", y_predict)
+        np.save(str(save_dir) + f"/y_predict_train_{i}.npy", y_predict_train)
         print(f'Accuracy of boosting on test set: {accuracy_score(y_test,y_predict)}\n')

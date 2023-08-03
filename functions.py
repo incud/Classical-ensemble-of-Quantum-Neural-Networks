@@ -12,6 +12,7 @@ from embedding import embedding, ry_embedding, rx_embedding
 from ansatz import get_ansatz
 
 
+
 IBM_QISKIT_HUB = 'ibm-q'
 IBM_QISKIT_GROUP = 'open'
 IBM_QISKIT_PROJECT = 'main'
@@ -82,6 +83,7 @@ def evaluate_bagging_predictor(qnn, n_estimators, max_features, max_samples, opt
         
         # array to gather estimators' predictions
         predictions = []
+        predictions_train = []
                 
         for j in range(n_estimators):
             
@@ -130,9 +132,11 @@ def evaluate_bagging_predictor(qnn, n_estimators, max_features, max_samples, opt
             ##### predict #####
             start_time_ts = time.time() 
             y_predict = qnn(X_test[:,random_estimator_features], params)
+            y_predict_train = qnn(X_train[:,random_estimator_features], params)
             end_time_ts = time.time()-start_time_ts
             np.save(str(save_dir) + f"/time_test_{i}.npy",end_time_ts)
             predictions.append(y_predict)
+            predictions_train.append(y_predict_train)
             
             # save predictions
             np.save(str(save_dir) + f"/y_predict_{i}.npy", y_predict)
@@ -163,7 +167,12 @@ def evaluate_bagging_predictor(qnn, n_estimators, max_features, max_samples, opt
         os.makedirs(save_dir,  0o755,  exist_ok=True)
         
         # transform list of predictions into an array
+        predictions_train = np.array(predictions_train)
         predictions = np.array(predictions)
+        
+        ##### predict train #####
+        y_predict_train = jnp.mean(predictions_train,axis=0).reshape(-1,1)
+        np.save(str(save_dir) + f"/y_predict_train_{i}.npy", y_predict_train)
         
         ##### predict #####
         start_time_ts = time.time() 
@@ -222,21 +231,27 @@ def evaluate_full_model_predictor(qnn, optimizer, n_qubits, runs, epochs, layers
         # save training time
         save_dir = full_model_working_dir 
         os.makedirs(save_dir,  0o755,  exist_ok=True)
-        np.save(str(save_dir) + f"/time_training_{i}.npy",end_time_tr)
+        #np.save(str(save_dir) + f"/time_training_{i}.npy",end_time_tr)
         
         # save parameters
         thetas = get_thetas(params)
-        np.save(str(save_dir) + f"/thetas_{i}.npy", thetas)
+        #np.save(str(save_dir) + f"/thetas_{i}.npy", thetas)
+        
+        ##### predict train #####
+        y_predict_train = qnn(X_train, params)
+        #np.save(str(save_dir) + f"/y_predict_train_{i}.npy", y_predict_train)
         
         ##### predict #####
         start_time_ts = time.time() 
         y_predict = qnn(X_test, params)
         end_time_ts = time.time()-start_time_ts
-        np.save(str(save_dir) + f"/time_test_{i}.npy",end_time_ts)
+        #np.save(str(save_dir) + f"/time_test_{i}.npy",end_time_ts)
         
         # save predictions
-        np.save(str(save_dir) + f"/y_predict_{i}.npy", y_predict)
+        np.save(str(save_dir) + f"/y_predict_test_{i}.npy", y_predict)
         print(f'Error of fullmodel on test set: {mean_squared_error(y_test,y_predict)}\n')
+        print('y_test',y_test[:10])
+        print('y_predict',y_predict[:10])
         # Plot 3D data
         # if i%1 == 0:
         #     # plt.scatter(X_test[:,0], y_test, label='Original points')
@@ -407,7 +422,15 @@ def evaluate_adaboost_predictor(qnn, n_estimators, optimizer, n_qubits, runs, ep
         # change save directory
         save_dir = ada_working_dir / "ensemble_model"
         os.makedirs(save_dir,  0o755,  exist_ok=True)
-            
+        
+        ##### predict train #####
+        N_train = len(X_train)
+        fitted_values = np.empty((N_train, n_estimators))
+        for t, params in enumerate(estimators_params):
+            fitted_values[:,t] = qnn(X_train, params)
+        y_predict_train = np.array([weighted_median(fitted_values[n], model_weights) for n in range(N_train)]) 
+        
+        np.save(str(save_dir) + f"/y_predict_train_{i}.npy", y_predict_train)
         
         ##### predict #####
         start_time_ts = time.time() 
